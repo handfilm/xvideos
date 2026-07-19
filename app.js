@@ -18,7 +18,7 @@
   // Point this at the ROOT folder that CONTAINS your category folders
   // (not a folder of files directly). Share it "Anyone with the link".
   var CONFIG = {
-    driveRootFolderId: '1fqRMXH-KqfMUJ8s8W-3FLdRtvOd7YV5X',
+    driveRootFolderId: '1zno_n1n23dbIb4HE8giapSAqGS9WZd33',
     driveApiKey: 'AIzaSyCqU3qT5SaRYTZev6ZfChJvApRDGDzv88Y',
     pageSize: 60
   };
