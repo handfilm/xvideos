@@ -20,7 +20,21 @@
   var CONFIG = {
     driveRootFolderId: '1zno_n1n23dbIb4HE8giapSAqGS9WZd33',
     driveApiKey: 'AIzaSyCqU3qT5SaRYTZev6ZfChJvApRDGDzv88Y',
-    pageSize: 60
+    pageSize: 60,
+
+    // ---- R2 video streaming (replaces live Drive streaming) ----
+    // Set this to your R2 bucket's Public Development URL (or Custom
+    // Domain once you set one up), e.g. 'https://pub-xxxxxxxxxxxx.r2.dev'
+    // Leave it blank ('') to keep streaming every video from Drive, same
+    // as before — the app checks for a non-empty string before using R2.
+    r2Enabled: true,
+    r2BaseUrl: 'https://xvideos.handsandhead.com', // custom domain, confirmed live (200 OK)
+
+    // Migration is running in capped batches (10GB free tier), so at any
+    // given moment some videos will be on R2 and some won't yet. Keep this
+    // true so the player automatically falls back to the old Drive stream
+    // URL if the R2 file 404s, instead of just failing silently.
+    r2FallbackToDrive: true
   };
 
   var FOLDER_MIME = 'application/vnd.google-apps.folder';
@@ -112,8 +126,49 @@
     return Drive.tagsPromise[catId];
   }
 
-  function parseDriveFile(file) {
+  // Given a tag folder's Drive id, finds the human-readable category+tag
+  // names from the already-cached lists (no extra API call). Returns
+  // null if it can't be resolved yet — callers should treat that as
+  // "can't build an R2 path, use Drive".
+  //
+  // Handles both structures:
+  //   category/tag/file.mp4        -> { category, tag }
+  //   category/file.mp4  (flat)    -> { category, tag: null }
+  // "Flat" categories are the ones with no Tag subfolders at all, where
+  // renderTagPicker() sets w.tagId = w.catId (see that function for why).
+  function findFolderNames(tagId) {
+    if (!Drive.categories) return null;
+    for (var c = 0; c < Drive.categories.length; c++) {
+      var cat = Drive.categories[c];
+      if (cat.id === tagId) return { category: cat.name, tag: null }; // flat category case
+      var tags = Drive.tags[cat.id];
+      if (!tags) continue;
+      for (var t = 0; t < tags.length; t++) {
+        if (tags[t].id === tagId) {
+          return { category: cat.name, tag: tags[t].name };
+        }
+      }
+    }
+    return null;
+  }
+
+  // Mirrors the folder layout rclone preserved during migration:
+  // {r2BaseUrl}/{category}/{tag}/{filename}, or {r2BaseUrl}/{category}/{filename}
+  // for flat categories. Each segment URL-encoded on its own so slashes
+  // inside names don't get misread as path breaks.
+  function buildR2StreamSrc(file, folderNames) {
+    if (!CONFIG.r2Enabled || !CONFIG.r2BaseUrl || !folderNames) return null;
+    var base = CONFIG.r2BaseUrl.replace(/\/+$/, '');
+    var parts = [encodeURIComponent(folderNames.category)];
+    if (folderNames.tag) parts.push(encodeURIComponent(folderNames.tag));
+    parts.push(encodeURIComponent(file.name));
+    return base + '/' + parts.join('/');
+  }
+
+  function parseDriveFile(file, folderNames) {
     var isVideo = !!(file.mimeType && file.mimeType.indexOf('video/') === 0);
+    var driveStreamSrc = isVideo ? DRIVE_FILES_URL + '/' + file.id + '?alt=media&key=' + CONFIG.driveApiKey : null;
+    var r2StreamSrc = isVideo ? buildR2StreamSrc(file, folderNames) : null;
     return {
       id: file.id,
       title: titleFromName(file.name),
@@ -122,7 +177,14 @@
       poster: file.thumbnailLink ? file.thumbnailLink.replace(/=s\d+$/, '=s1200')
         : 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w1200',
       full: 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w2000',
-      streamSrc: isVideo ? DRIVE_FILES_URL + '/' + file.id + '?alt=media&key=' + CONFIG.driveApiKey : null
+      // Prefer R2 when we could build a path for it; otherwise go straight
+      // to Drive (covers r2 disabled, no base URL set yet, or this file's
+      // folder names weren't in cache for some reason).
+      streamSrc: r2StreamSrc || driveStreamSrc,
+      // Always kept around, even when streamSrc is already Drive, so the
+      // error-fallback handler on the <video> tag has something to swap
+      // to no matter which one was used first.
+      fallbackSrc: driveStreamSrc
     };
   }
 
@@ -132,8 +194,9 @@
     if (!cache) cache = Drive.filePages[tagId] = { items: [], nextPageToken: undefined, done: false, loading: false };
     if (cache.loading || cache.done) return Promise.resolve(cache);
     cache.loading = true;
+    var folderNames = findFolderNames(tagId); // cached lookup, no extra API call
     return driveList(tagId, false, cache.nextPageToken).then(function (data) {
-      var items = (data.files || []).map(parseDriveFile);
+      var items = (data.files || []).map(function (f) { return parseDriveFile(f, folderNames); });
       cache.items = cache.items.concat(items);
       cache.nextPageToken = data.nextPageToken || null;
       cache.done = !cache.nextPageToken;
@@ -550,7 +613,7 @@
     card.dataset.id = p.id;
     var media;
     if (p.isVideo) {
-      media = '<video class="asset-card-video" src="' + p.streamSrc + '" poster="' + p.poster + '" muted loop playsinline preload="metadata" data-autoplay="1"></video>' +
+      media = '<video class="asset-card-video" src="' + p.streamSrc + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" muted loop playsinline preload="metadata" data-autoplay="1"></video>' +
         '<span class="asset-card-play">\u25b6</span>' +
         '<span class="asset-card-duration" hidden>0:00</span>' +
         '<div class="asset-card-progress"><span></span></div>';
@@ -566,6 +629,7 @@
       var durEl = qs('.asset-card-duration', card);
       var bar = qs('.asset-card-progress span', card);
       v.playbackRate = w.speed || 1;
+      bindVideoFallback(v); // R2 miss (still migrating) -> retry once from Drive
       v.addEventListener('loadedmetadata', function () {
         if (isFinite(v.duration)) { durEl.hidden = false; durEl.textContent = formatDuration(v.duration); }
       });
@@ -653,6 +717,24 @@
 
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
   function escapeAttr(s) { return escapeHtml(s); }
+
+  // Attaches a one-shot fallback to a <video>: if its current src fails to
+  // load (network error, or a 404 because R2 doesn't have this file yet —
+  // migration is running in capped batches), retry once from
+  // data-fallback-src (the direct Drive stream URL). Guarded so a genuinely
+  // broken file doesn't loop retries forever.
+  function bindVideoFallback(video) {
+    video.addEventListener('error', function onError() {
+      var fallback = video.getAttribute('data-fallback-src');
+      if (!fallback || video.dataset.fallbackTried || video.src === fallback) return;
+      video.dataset.fallbackTried = '1';
+      video.src = fallback;
+      video.load();
+      if (video.hasAttribute('autoplay') || video.matches(':hover')) {
+        video.play().catch(function () {});
+      }
+    });
+  }
 
   /* ---------------- Grid size / labels / speed preferences ---------------- */
   function loadGridSizePref() { try { return localStorage.getItem('rawx_grid_size') || 'm'; } catch (e) { return 'm'; } }
@@ -776,7 +858,8 @@
     var stage = document.getElementById('lb-media');
 
     if (p.isVideo) {
-      stage.innerHTML = '<video id="lb-video" src="' + p.streamSrc + '" poster="' + p.poster + '" controls autoplay loop playsinline></video>';
+      stage.innerHTML = '<video id="lb-video" src="' + p.streamSrc + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" controls autoplay loop playsinline></video>';
+      bindVideoFallback(document.getElementById('lb-video'));
     } else {
       stage.innerHTML = '<img src="' + p.full + '" alt="' + escapeAttr(p.title) + '">';
     }
