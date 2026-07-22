@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAWX MOTION LAB — Feed // HANDFILM</title>
+<meta name="description" content="The full RAWX archive as one continuous, looping feed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="super.css">
+</head>
+<body>
+
+<div id="boot" class="boot">
+  <div class="boot-line">RAWX MOTION LAB // FEED</div>
+  <div class="boot-line boot-sub" id="boot-status">READING CATEGORY FOLDERS…</div>
+  <div class="boot-bar"><span id="boot-bar-fill"></span></div>
+</div>
+
+<div class="shell">
+
+  <!-- ================= LEFT RAIL ================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <a href="index.html" class="side-logo">
+        <span class="side-logo-mark">RX</span>
+        <span class="side-logo-full">RAWX MOTION LAB<br>THE FEED</span>
+      </a>
+    </div>
+
+    <div class="side-search">
+      <input type="text" id="side-search-input" placeholder="SEARCH THE FEED…" autocomplete="off">
+    </div>
+
+    <nav class="side-nav" id="side-nav">
+      <div class="side-nav-label">SECTIONS</div>
+      <a href="#" class="side-link active" id="side-link-all" data-cat="">
+        <span class="side-link-idx">ALL</span>
+        <span class="side-link-name">Everything</span>
+        <span class="side-link-sub">Every category, interleaved</span>
+      </a>
+      <div id="side-cat-links"><!-- category links injected here --></div>
+    </nav>
+
+    <div class="side-recents" id="side-recents" hidden>
+      <div class="side-nav-label">RECENTLY VIEWED</div>
+      <div class="side-recents-strip" id="side-recents-strip"></div>
+    </div>
+
+    <div class="side-bottom">
+      <div class="side-stat-row"><span>LOADED</span><b id="stat-loaded">0</b></div>
+      <div class="side-stat-row"><span>LAP</span><b id="stat-lap">1</b></div>
+      <div class="side-stat-row"><span>PINNED</span><b id="stat-pinned">0</b></div>
+      <button class="side-board-btn" id="side-board-btn">
+        <span>OPEN BOARD</span><span id="side-board-count">0</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <header class="topbar">
+      <button class="topbar-menu" id="topbar-menu-btn" aria-label="Toggle sections">☰</button>
+      <div class="panels-nav-wrap">
+        <button class="panels-nav-btn" id="panels-nav-btn">PANELS ▾</button>
+        <div class="panels-menu" id="panels-menu">
+          <a href="https://lab.handsandhead.com" class="panels-item">LAB <span>Desktop OS</span></a>
+          <a href="https://deeper.handsandhead.com" class="panels-item panels-item-current">DEEPER <span>Infinite looping feed — you are here</span></a>
+          <a href="https://hub.handsandhead.com" class="panels-item">HUB <span>Central index of everything</span></a>
+          <a href="https://lingerie.handsandhead.com/index-b2b.html" class="panels-item">B2B LOOKBOOK <span>Wholesale lookbook ↗</span></a>
+          <a href="https://bloom-app.handsandhead.com" class="panels-item" target="_blank" rel="noopener">BLOOM <span>AI text generator ↗</span></a>
+          <a href="https://vault.handsandhead.com" class="panels-item" target="_blank" rel="noopener">VAULT <span>RAW asset & storage terminal ↗</span></a>
+          <a href="https://os.handsandhead.com" class="panels-item" target="_blank" rel="noopener">OS <span>Full Motion OS workstation ↗</span></a>
+        </div>
+      </div>
+      <span class="topbar-crumb" id="topbar-crumb">EVERYTHING — INTERLEAVED, ON LOOP</span>
+      <select class="topbar-select" id="theme-select" title="Accent theme">
+        <option value="brutalist-red">BRUTALIST RED</option>
+        <option value="cyberpunk-green">CYBERPUNK GREEN</option>
+        <option value="electric-blue">ELECTRIC BLUE</option>
+      </select>
+      <div class="topbar-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">SYNCING</span>
+      </div>
+    </header>
+
+    <div class="feed-head">
+      <h1 class="feed-title">THE FEED<span class="accent-dot">.</span></h1>
+      <p class="feed-sub">Everything that's loaded plays on a genuine loop — once you reach the
+        end, it circles back to the start and tells you so. No infinite-scroll illusion,
+        just the archive on repeat.</p>
+    </div>
+
+    <div class="dash-feed" id="dash-feed"><!-- cards + loop dividers injected here --></div>
+    <div class="grid-empty" id="feed-empty" hidden>NOTHING MATCHES THAT SEARCH.</div>
+    <div class="sentinel" id="feed-sentinel"></div>
+  </main>
+
+</div>
+
+<!-- ================= LIGHTBOX ================= -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lb-frame" id="lb-frame">
+    <div class="lb-head">
+      <span id="lb-title">ASSET</span>
+      <div class="lb-head-actions">
+        <span class="lb-key-legend">N/P NAV · ESC CLOSE</span>
+        <button id="lb-pin-btn" class="lb-icon-btn" title="Pin to board">PIN</button>
+        <button id="lb-close" class="lb-icon-btn lb-close" title="Close">✕</button>
+      </div>
+    </div>
+    <button class="lb-nav lb-prev" id="lb-prev" title="Previous (P)">‹</button>
+    <div class="lb-media" id="lb-media"></div>
+    <button class="lb-nav lb-next" id="lb-next" title="Next (N)">›</button>
+
+    <div class="lb-mobile-dock" id="lb-mobile-dock">
+      <button class="lb-dock-btn" id="lb-dock-prev" title="Previous">‹</button>
+      <button class="lb-dock-btn" id="lb-dock-next" title="Next">›</button>
+    </div>
+
+    <div class="lb-meta">
+      <div class="lb-meta-row"><span>ITEM</span><b id="lb-character">—</b></div>
+      <div class="lb-meta-row"><span>SECTION</span><b id="lb-pillar">—</b></div>
+      <div class="lb-meta-row"><span>POSITION</span><b id="lb-set-count">—</b></div>
+      <button class="btn btn-primary btn-block" onclick="window.open('https://handfilm.myshopify.com/', '_blank')">
+        INITIATE B2B INQUIRY <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= B2B TERMINAL / BOARD MODAL ================= -->
+<div class="modal-overlay" id="board-modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>B2B TERMINAL // BOARD</span>
+      <button id="board-modal-close" class="lb-icon-btn lb-close">✕</button>
+    </div>
+
+    <div class="modal-body" id="modal-body-empty">
+      <p class="modal-empty-text">NO ASSETS PINNED YET.<br>Pin references from the feed to build a sourcing board, then submit a structured inquiry.</p>
+    </div>
+
+    <div class="board-thumbs" id="board-thumbs"></div>
+
+    <form class="inquiry-form" id="inquiry-form">
+      <div class="form-row">
+        <label>COMPANY</label>
+        <input type="text" id="inq-company" placeholder="COMPANY NAME" required>
+      </div>
+      <div class="form-row">
+        <label>EMAIL</label>
+        <input type="email" id="inq-email" placeholder="YOU@COMPANY.COM" required>
+      </div>
+      <div class="form-row">
+        <label>NOTES</label>
+        <textarea id="inq-notes" rows="3" placeholder="MOQ, TIMELINE, SIZE RUN, ETC."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">
+        SUBMIT INQUIRY <span class="arrow">→</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="dashboard.js"></script>
+<script src="super.js"></script>
+</body>
+</html>

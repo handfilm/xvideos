@@ -89,6 +89,15 @@ request.
   (drag/resize/focus/minimize), gallery rendering, pin board, lightbox.
 - `generate-manifest.js` — kept for reference only; not used by the
   current Drive-driven build.
+- `super.css` / `super.js` — new additive Super-App layer, see below.
+
+> **Note on `dashboard.css`:** this file was reconstructed from the class
+> names used in `dashboard.html`/`dashboard.js` and the shared visual
+> system in `style.css`, since the previously uploaded copy of
+> `dashboard.css` actually contained HTML, not CSS. It's functional and
+> visually consistent, but if you have your original stylesheet, swap it
+> back in — everything else in this pass doesn't depend on its exact
+> contents.
 
 ## Mobile / next-level gallery features (this pass)
 
@@ -151,6 +160,65 @@ All additive — nothing above was removed or changed in behavior.
   as a `.txt` list or `.csv`.
 - **Presentation mode** — `Shift+P` hides the top bar, taskbar and window
   chrome for a clean client walkthrough; `Shift+P` again restores it.
+
+## Super-App layer (`super.css` + `super.js`)
+
+This pass adds a large batch of "Motion Studio OS Super-App" features as a
+**separate, additive layer** rather than rewriting `app.js` / `dashboard.js`
+in place — both of those files, plus `style.css` and `desktop.css`, are
+completely untouched. `index.html` and `dashboard.html` each got exactly two
+new lines (a `<link>` for `super.css` and a `<script>` for `super.js`, both
+loaded last) plus three new PANELS menu links. Everything else lives in the
+two new files and works purely through the DOM and `localStorage`, so it
+can't break anything that already worked.
+
+- **Unified ecosystem links** — BLOOM, VAULT, and OS added to the PANELS
+  menu on both pages (alongside LAB / DEEPER / HUB / B2B LOOKBOOK). Every
+  panel link keeps its normal click-to-navigate behavior and now also gets
+  a small "▢ WINDOW" button to open it as a floating, draggable/resizable
+  iframe window instead — with an automatic "open in new tab" fallback if
+  the target refuses to be framed.
+- **Command palette** — `Ctrl/Cmd+K` or `/` (outside text fields) opens a
+  fuzzy-searchable list of categories/sections, theme switches, resolution
+  switches, and system toggles (CRT, soundscape, spotlight, sync, board,
+  presentation mode, ecosystem panels).
+- **CRT / scanline FX** — toggle button (floating action cluster, bottom
+  right) overlays scanlines + a vignette + a subtle flicker across the
+  whole viewport.
+- **Lo-fi ambient soundscape** — a fully procedural Web Audio pad (three
+  detuned oscillators + a slow filter LFO), so there's no external audio
+  file to license or fail to load. Toggle + volume slider in the same
+  floating cluster.
+- **HLS.js adaptive streaming** — any `<video>` whose src ends in `.m3u8`
+  automatically gets `hls.js` (loaded from CDN on first use only) with
+  `maxBufferLength: 30`; native Safari/iOS HLS is left alone. Every
+  existing `.mp4` asset is untouched.
+- **Frame-by-frame stepper + precision speed slider** — added to the
+  lightbox header on both pages. `,` / `.` keys or the on-screen buttons
+  step ±1/30s; the slider gives 0.25×–4.0× playback rate.
+- **Ambient glow** — the first time you hover a card, its poster/frame is
+  sampled to an 8×8 canvas and the average color becomes a soft glow
+  behind the card on hover.
+- **Cross-tab sync** — pin counts, theme, and resolution now also update
+  live in any other open tab via the native `storage` event.
+- **Dashboard only** — a new toolbar above the feed adds **SHUFFLE**,
+  **CATEGORY INTERLEAVE**, **NEWEST FIRST**, and a **MEDIA FILTER**
+  (video/image/all), a **MASONRY** grid toggle with S/M/L density, and a
+  **hero carousel** built from the first few distinct categories that have
+  actually streamed into the feed (with click-to-jump tags and dot nav).
+  These sort/filter controls act on cards already rendered in the current
+  session — they don't re-fetch or reorder the underlying lazy-loaded
+  Drive pagination, so very early in a session (before much has loaded)
+  they'll have less to work with.
+
+### Known simplifications
+- The floating iframe window can't always *detect* a framing block
+  synchronously (browsers don't expose `X-Frame-Options` failures to JS);
+  it uses a 4-second load heuristic before showing the "open in new tab"
+  fallback link, which stays available immediately regardless.
+- Ambient glow needs same-origin (or CORS-enabled) media to read pixel
+  data; if a source is cross-origin without CORS headers, the canvas read
+  silently no-ops and the card just has no glow — nothing breaks.
 
 ## Next steps you can build on top of this
 

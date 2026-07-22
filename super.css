@@ -1,0 +1,183 @@
+/* ============================================================
+   RAWX MOTION LAB — SUPER-APP LAYER (additive only)
+   Loaded on top of style.css + (desktop.css | dashboard.css).
+   Everything in here is scoped to new classes/ids so it can
+   never collide with or override existing rules.
+============================================================ */
+
+/* ---------------- Command palette ---------------- */
+.rwx-palette-overlay{
+  position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.72);
+  display: none; align-items: flex-start; justify-content: center; padding-top: 12vh;
+}
+.rwx-palette-overlay.open{ display: flex; }
+.rwx-palette{
+  width: 100%; max-width: 560px; background: var(--panel); border: 1px solid var(--red);
+  box-shadow: 10px 10px 0 rgba(255,0,0,.18); max-height: 60vh; display: flex; flex-direction: column;
+}
+.rwx-palette-input{
+  width: 100%; background: var(--panel-2); border: none; border-bottom: 1px solid var(--panel-line);
+  color: var(--white); font-family: var(--font-mono); font-size: 14px; padding: 16px 18px; letter-spacing: .02em;
+}
+.rwx-palette-input:focus{ outline: none; }
+.rwx-palette-list{ overflow-y: auto; }
+.rwx-palette-item{
+  display: flex; justify-content: space-between; gap: 10px; padding: 11px 18px;
+  font-size: 12px; letter-spacing: .03em; color: var(--white); cursor: pointer;
+  border-bottom: 1px solid var(--panel-line);
+}
+.rwx-palette-item span:last-child{ color: var(--steel-dim); font-size: 10px; letter-spacing: .1em; }
+.rwx-palette-item:hover, .rwx-palette-item.rwx-active{ background: rgba(255,0,0,.08); color: var(--red); }
+.rwx-palette-empty{ padding: 20px 18px; font-size: 11px; color: var(--steel-dim); letter-spacing: .08em; }
+.rwx-palette-hint{ padding: 8px 18px; font-size: 9.5px; color: var(--steel-dim); letter-spacing: .1em; border-top: 1px solid var(--panel-line); }
+
+/* ---------------- CRT / scanline FX ---------------- */
+body.rwx-crt-on::before{
+  content: ''; position: fixed; inset: 0; z-index: 1500; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 1px, transparent 2px, transparent 3px);
+  mix-blend-mode: overlay;
+  animation: rwx-crt-flicker 6s infinite;
+}
+body.rwx-crt-on::after{
+  content: ''; position: fixed; inset: 0; z-index: 1501; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.45) 100%);
+}
+@keyframes rwx-crt-flicker{ 0%,100%{ opacity: 1; } 92%{ opacity: 1; } 93%{ opacity: .85; } 94%{ opacity: 1; } }
+body.rwx-crt-on .asset-card video, body.rwx-crt-on .asset-card img,
+body.rwx-crt-on #lb-media video, body.rwx-crt-on #lb-media img{
+  filter: saturate(1.15) contrast(1.05);
+}
+body.rwx-crt-on .asset-card:hover video, body.rwx-crt-on .asset-card:hover img{
+  text-shadow: 1px 0 red, -1px 0 cyan;
+}
+
+/* ---------------- Topbar chip buttons for new toggles ---------------- */
+.rwx-chip-btn{
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--steel-dim);
+  background: transparent; border: 1px solid var(--panel-line); padding: 7px 10px; cursor: pointer;
+  white-space: nowrap;
+}
+.rwx-chip-btn:hover{ color: var(--white); border-color: var(--red); }
+.rwx-chip-btn.rwx-active{ color: var(--red); border-color: var(--red); background: rgba(255,0,0,.08); }
+.rwx-inline-controls{ display: flex; align-items: center; gap: 6px; }
+.rwx-vol-slider{ width: 60px; accent-color: var(--red); }
+
+/* ---------------- Floating iframe launcher windows ---------------- */
+.rwx-iwin{
+  position: fixed; z-index: 2500; background: var(--panel); border: 1px solid var(--panel-line);
+  display: flex; flex-direction: column; min-width: 320px; min-height: 240px;
+  box-shadow: 8px 8px 0 rgba(255,0,0,.2);
+}
+.rwx-iwin-bar{
+  display: flex; align-items: center; justify-content: space-between; padding: 8px 10px;
+  background: var(--panel-2); border-bottom: 1px solid var(--panel-line); cursor: move;
+  font-size: 11px; letter-spacing: .08em;
+}
+.rwx-iwin-bar-actions{ display: flex; gap: 4px; }
+.rwx-iwin-bar button{
+  background: transparent; border: 1px solid var(--panel-line); color: var(--steel-dim);
+  font-size: 10px; padding: 4px 7px; cursor: pointer;
+}
+.rwx-iwin-bar button:hover{ color: var(--white); border-color: var(--red); }
+.rwx-iwin-body{ flex: 1; position: relative; background: #000; }
+.rwx-iwin-body iframe{ width: 100%; height: 100%; border: none; }
+.rwx-iwin-fallback{
+  position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; color: var(--steel-dim); font-size: 11px; letter-spacing: .06em; text-align: center; padding: 20px;
+}
+.rwx-iwin-fallback.show{ display: flex; }
+.rwx-iwin-fallback a{
+  border: 1px solid var(--red); color: var(--red); padding: 8px 16px; text-decoration: none; font-size: 11px; letter-spacing: .08em;
+}
+.rwx-iwin-resize{ position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; }
+.rwx-iwin-launch-btn{
+  margin-left: auto; background: transparent; border: 1px solid var(--panel-line); color: var(--steel-dim);
+  font-size: 9px; padding: 3px 6px; cursor: pointer; flex-shrink: 0;
+}
+.rwx-iwin-launch-btn:hover{ color: var(--red); border-color: var(--red); }
+
+/* ---------------- Lightbox add-ons: frame stepper + precision speed ---------------- */
+.rwx-lb-stepper{ display: flex; align-items: center; gap: 4px; }
+.rwx-lb-step-btn{
+  background: transparent; border: 1px solid var(--panel-line); color: var(--steel-dim);
+  font-family: var(--font-mono); font-size: 10px; padding: 6px 8px; cursor: pointer;
+}
+.rwx-lb-step-btn:hover{ color: var(--white); border-color: var(--red); }
+.rwx-lb-speed-wrap{ display: flex; align-items: center; gap: 6px; }
+.rwx-lb-speed-slider{ width: 90px; accent-color: var(--red); }
+.rwx-lb-speed-val{ font-size: 10px; color: var(--red); width: 32px; text-align: right; }
+
+/* ---------------- Ambient glow behind active cards ---------------- */
+.asset-card{ --rwx-glow: rgba(255,0,0,0); }
+.asset-card:hover, .asset-card.card-active{
+  box-shadow: 0 0 34px 4px var(--rwx-glow);
+  transition: box-shadow .25s ease;
+}
+
+/* ---------------- Dashboard: masonry grid + density ---------------- */
+#dash-feed.rwx-masonry{
+  display: block; column-gap: .85rem;
+  column-count: 2;
+}
+#dash-feed.rwx-masonry .asset-card{ break-inside: avoid; margin-bottom: .85rem; width: 100%; aspect-ratio: auto; }
+@media (min-width: 640px){ #dash-feed.rwx-masonry{ column-count: 3; } }
+@media (min-width: 1000px){ #dash-feed.rwx-masonry{ column-count: 4; } }
+@media (min-width: 1400px){ #dash-feed.rwx-masonry{ column-count: 5; } }
+#dash-feed.rwx-masonry .loop-divider{ column-span: all; }
+
+#dash-feed.rwx-density-s{ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+#dash-feed.rwx-density-m{ grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+#dash-feed.rwx-density-l{ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+#dash-feed.rwx-masonry.rwx-density-s{ column-count: 3; }
+#dash-feed.rwx-masonry.rwx-density-l{ column-count: 2; }
+@media (min-width: 1000px){
+  #dash-feed.rwx-masonry.rwx-density-s{ column-count: 5; }
+  #dash-feed.rwx-masonry.rwx-density-l{ column-count: 3; }
+}
+
+/* ---------------- Dashboard: feed toolbar (shuffle / interleave / filter) ---------------- */
+.rwx-feed-toolbar{
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 0 32px 18px;
+}
+@media (max-width: 900px){ .rwx-feed-toolbar{ padding: 0 18px 14px; } }
+.rwx-feed-toolbar select{
+  background: var(--panel-2); border: 1px solid var(--panel-line); color: var(--white);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; padding: 7px 8px;
+}
+
+/* ---------------- Dashboard: hero carousel ---------------- */
+.rwx-hero-carousel{
+  position: relative; margin: 0 32px 20px; height: 46vh; min-height: 260px; max-height: 440px;
+  overflow: hidden; background: var(--panel);
+}
+@media (max-width: 900px){ .rwx-hero-carousel{ margin: 0 18px 16px; height: 38vh; } }
+.rwx-hero-slide{
+  position: absolute; inset: 0; opacity: 0; transition: opacity .5s ease; pointer-events: none;
+}
+.rwx-hero-slide.rwx-active{ opacity: 1; pointer-events: auto; }
+.rwx-hero-slide video, .rwx-hero-slide img{ width: 100%; height: 100%; object-fit: cover; filter: brightness(.6); }
+.rwx-hero-caption{
+  position: absolute; left: 24px; bottom: 20px; z-index: 2;
+}
+.rwx-hero-caption b{ font-family: var(--font-display); font-size: 26px; color: var(--white); display: block; }
+.rwx-hero-caption span{ font-size: 10px; letter-spacing: .2em; color: var(--red); }
+.rwx-hero-dots{ position: absolute; right: 20px; bottom: 20px; z-index: 3; display: flex; gap: 6px; }
+.rwx-hero-dot{ width: 8px; height: 8px; border: 1px solid var(--red); background: transparent; cursor: pointer; padding: 0; }
+.rwx-hero-dot.rwx-active{ background: var(--red); }
+.rwx-hero-jump{ position: absolute; left: 20px; top: 18px; z-index: 3; display: flex; gap: 6px; flex-wrap: wrap; max-width: 70%; }
+.rwx-hero-jump button{
+  background: rgba(0,0,0,.5); border: 1px solid var(--panel-line); color: var(--white);
+  font-size: 9.5px; letter-spacing: .08em; padding: 5px 9px; cursor: pointer;
+}
+.rwx-hero-jump button:hover{ border-color: var(--red); color: var(--red); }
+
+/* ---------------- Dashboard: media filter / custom sort helpers ---------------- */
+.asset-card.rwx-media-hidden{ display: none !important; }
+.rwx-sort-active .loop-divider{ display: none; }
+
+/* ---------------- Floating action cluster (CRT / sound / palette hint) ---------------- */
+.rwx-fab{
+  position: fixed; right: 14px; z-index: 900; display: flex; flex-direction: column; gap: 6px;
+}
+.rwx-fab .rwx-chip-btn{ background: var(--panel); }

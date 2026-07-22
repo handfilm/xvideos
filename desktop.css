@@ -270,6 +270,8 @@ body.presentation-mode .win{ border: none; box-shadow: none; }
 }
 .launcher-item:last-child{ border-bottom: none; }
 .launcher-item:hover{ background: var(--panel); color: var(--red); }
+/* .panels-nav-* lives in style.css now — shared with dashboard.html, which
+   doesn't load this file. Keep both topbars' cross-panel menu identical. */
 
 .taskbar-windows{ flex: 1; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
 .taskbar-windows::-webkit-scrollbar{ display: none; }

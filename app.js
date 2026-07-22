@@ -1450,6 +1450,16 @@
     });
     document.addEventListener('click', function () { document.getElementById('launcher-menu').classList.remove('open'); });
 
+    document.getElementById('panels-nav-btn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      this.classList.toggle('open');
+      document.getElementById('panels-menu').classList.toggle('open');
+    });
+    document.addEventListener('click', function () {
+      document.getElementById('panels-nav-btn').classList.remove('open');
+      document.getElementById('panels-menu').classList.remove('open');
+    });
+
     document.addEventListener('keydown', function (e) {
       var typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
       // Shift+P — clean client-pitch presentation mode: hides topbar,

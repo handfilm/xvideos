@@ -1,0 +1,69 @@
+/* ============================================================
+   RAWX MOTION LAB — FEED DASHBOARD STYLESHEET
+   Reconstructed to match dashboard.html markup + dashboard.js
+   class names, sharing the brutalist tokens (--void, --panel,
+   --red, Space Mono / Barlow Condensed) already defined in
+   style.css. Scoped so nothing here collides with desktop.css
+   (index.html) — the two pages never load each other's CSS.
+============================================================ */
+
+/* ---------------- Sidebar extras (search + recents) ---------------- */
+.side-search{ padding: 14px 20px; border-bottom: 1px solid var(--panel-line); }
+.side-search input{
+  width: 100%; background: var(--panel-2); border: 1px solid var(--panel-line);
+  color: var(--white); font-size: 11px; letter-spacing: .04em; padding: 9px 10px;
+}
+.side-search input:focus{ outline: none; border-color: var(--red); }
+.side-search input::placeholder{ color: var(--steel-dim); }
+
+.side-recents{ padding: 14px 20px; border-top: 1px solid var(--panel-line); }
+.side-recents-strip{ display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.side-recents-strip::-webkit-scrollbar{ display: none; }
+.side-recent-thumb{
+  flex-shrink: 0; width: 44px; height: 44px; overflow: hidden; cursor: pointer;
+  border: 1px solid var(--panel-line); opacity: .75; transition: opacity .15s ease, border-color .15s ease;
+}
+.side-recent-thumb:hover{ opacity: 1; border-color: var(--red); }
+.side-recent-thumb img{ width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------------- Feed head ---------------- */
+.feed-head{ padding: 40px 32px 20px; max-width: 760px; }
+.feed-title{ font-family: var(--font-display); font-size: clamp(32px, 5vw, 54px); font-weight: 700; letter-spacing: .01em; }
+.feed-sub{ font-size: 13px; color: var(--steel-dim); margin-top: 10px; max-width: 620px; line-height: 1.7; }
+
+.loop-divider{
+  grid-column: 1 / -1;
+  text-align: center; font-size: 10px; letter-spacing: .3em; color: var(--red);
+  padding: 22px 0; margin: 6px 0;
+  border-top: 1px dashed var(--panel-line); border-bottom: 1px dashed var(--panel-line);
+}
+
+/* ---------------- Feed grid ---------------- */
+.dash-feed{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .85rem;
+  padding: 0 32px 60px;
+}
+.dash-feed .asset-card{ position: relative; overflow: hidden; cursor: pointer; aspect-ratio: 3/4; }
+.dash-feed .asset-card video, .dash-feed .asset-card img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+.dash-feed .asset-card.feed-hidden{ display: none; }
+
+.sentinel{ height: 1px; }
+
+/* ---------------- Mobile ---------------- */
+@media (max-width: 900px){
+  .shell{ position: relative; }
+  .sidebar{
+    position: fixed; left: 0; top: 0; height: 100vh; z-index: 60;
+    transform: translateX(-100%); transition: transform .2s ease;
+    box-shadow: 12px 0 30px rgba(0,0,0,.6);
+  }
+  .sidebar.open{ transform: translateX(0); }
+  .topbar-menu{ display: inline-flex !important; }
+  .feed-head{ padding: 28px 18px 14px; }
+  .dash-feed{ padding: 0 18px 40px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; }
+}
+@media (min-width: 901px){
+  .topbar-menu{ display: none; }
+}
