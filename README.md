@@ -119,6 +119,39 @@ request.
 - **"RAWX — DEEPER" branding** — a huge, low-opacity brutalist wordmark
   sits behind the floating windows on the desktop surface.
 
+## Motion Studio OS upgrade (this pass)
+
+All additive — nothing above was removed or changed in behavior.
+
+- **Dynamic canvas hero grid** — the empty desktop background is now a live,
+  clickable video grid sampled from the first few categories at boot.
+  Hovering brightens a tile; clicking spawns that category's window. The
+  grid automatically blurs/darkens while any window is open.
+- **Memory guard** — off-screen video tags fully detach their `src` (falling
+  back to the poster) once a card drifts far out of view, and reattach as it
+  scrolls back near — keeps memory bounded across huge tag folders.
+- **Resolution selector** — AUTO / 4K / 1080P / 720P dropdown in the top bar
+  and lightbox. Swaps every visible video's stream URL (inserting a
+  `_1080p`/`_720p`/`_4k` suffix before the extension) while preserving
+  playback position.
+- **Filename tag chips** — each window auto-derives chips from its filenames
+  (split on `_ - .`) for 1-click filtering, shown above the grid.
+- **Sync All Loops** + **Spotlight Hover** — top-bar buttons to time-align
+  every currently playing loop, or dim every other card while hovering one.
+- **Compare Window** — pin 2 or 4 videos, then "COMPARE PINNED" in the Board
+  opens them side by side with a shared scrub bar and a sync button.
+- **A/B loop range** — dual sliders under the lightbox stage constrain
+  playback to a custom in/out point, handy for picking a loop out of a
+  longer 4K clip.
+- **Picture-in-Picture** — the lightbox's "PIP" button minimizes the current
+  video into a floating bottom-right mini-player that keeps playing.
+- **Theme accent switcher** — top-bar dropdown swaps the accent color
+  (Brutalist Red / Cyberpunk Green / Electric Blue) app-wide.
+- **Batch export** — the Board terminal can export all pinned stream links
+  as a `.txt` list or `.csv`.
+- **Presentation mode** — `Shift+P` hides the top bar, taskbar and window
+  chrome for a clean client walkthrough; `Shift+P` again restores it.
+
 ## Next steps you can build on top of this
 
 - Right-click context menu on asset cards (open, pin, copy link)

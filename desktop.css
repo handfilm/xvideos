@@ -32,6 +32,32 @@ body { overflow: hidden; }
 }
 .cat-tab:hover{ color: var(--white); border-color: var(--red); }
 
+.os-topbar-tools{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.os-topbar-tools .win-chip-btn.active{ color: var(--red); border-color: var(--red); background: rgba(255,0,0,.08); }
+@media (max-width: 900px){ .os-topbar-tools{ display: none; } }
+
+/* Mobile settings gear + sheet — only surfaces where .os-topbar-tools hides */
+.taskbar-settings-btn{
+  display: none; width: 30px; height: 30px; flex-shrink: 0;
+  background: transparent; color: var(--steel-dim); border: 1px solid var(--panel-line);
+  font-size: 14px; cursor: pointer;
+}
+.taskbar-settings-btn:hover{ color: var(--white); border-color: var(--red); }
+@media (max-width: 900px){ .taskbar-settings-btn{ display: inline-flex; align-items: center; justify-content: center; } }
+
+.mobile-settings-sheet{
+  display: none; position: fixed; right: 8px; bottom: 52px; z-index: 250;
+  width: 220px; background: var(--panel-2); border: 1px solid var(--red);
+  padding: 12px; flex-direction: column; gap: 10px;
+}
+.mobile-settings-sheet.open{ display: flex; }
+.mss-row{ display: flex; flex-direction: column; gap: 4px; }
+.mss-row label{ font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; color: var(--steel-dim); }
+.mss-row .topbar-select{ width: 100%; }
+.mss-row-buttons{ flex-direction: row; flex-wrap: wrap; gap: 6px; }
+.mss-row-buttons .win-chip-btn{ flex: 1; text-align: center; }
+#mobile-presentation-btn.active{ color: var(--red); border-color: var(--red); background: rgba(255,0,0,.08); }
+
 .os-topbar-stats{
   display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   font-size: 10px; letter-spacing: .1em; color: var(--steel-dim);
@@ -67,6 +93,44 @@ body { overflow: hidden; }
   font-family: var(--font-mono); font-size: clamp(10px, 1.6vw, 15px);
   letter-spacing: .5em; color: rgba(255,255,255,.06); margin-top: clamp(4px, 1.2vw, 16px);
 }
+
+/* ---------------- Dynamic Canvas Hero Grid (background) ---------------- */
+.desktop-hero-grid{
+  position: absolute; inset: 0; z-index: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 2px; opacity: .5; transition: filter .3s ease, opacity .3s ease;
+}
+.desktop-hero-grid.hero-dimmed{ filter: blur(6px) brightness(.35); opacity: .35; }
+.hero-tile{ position: relative; aspect-ratio: 3/4; overflow: hidden; cursor: pointer; }
+.hero-tile video, .hero-tile img{ width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(.3); transition: filter .2s ease, transform .2s ease; }
+.hero-tile.hero-hover video, .hero-tile.hero-hover img{ filter: grayscale(0); transform: scale(1.06); }
+.hero-tile.hero-hover{ outline: 1px solid var(--red); z-index: 1; }
+
+/* ---------------- Filename regex tag chips ---------------- */
+.win-tagchips{ display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.win-tagchips:empty{ display: none; margin: 0; }
+.tagchip{
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .05em; text-transform: uppercase;
+  background: transparent; color: var(--steel-dim); border: 1px solid var(--panel-line);
+  padding: 3px 8px; cursor: pointer;
+}
+.tagchip:hover{ color: var(--white); border-color: var(--red); }
+.tagchip.active{ color: var(--red); border-color: var(--red); background: rgba(255,0,0,.08); }
+
+/* ---------------- Spotlight Hover mode ---------------- */
+.asset-card.spotlight-dim{ opacity: .25; filter: grayscale(.6); transition: opacity .15s ease, filter .15s ease; }
+.asset-card.spotlight-target{ opacity: 1; filter: none; z-index: 2; outline: 1px solid var(--red); }
+
+/* ---------------- Client Pitch / Presentation mode (Shift+P) ---------------- */
+body.presentation-mode .os-topbar,
+body.presentation-mode .os-taskbar,
+body.presentation-mode .win-titlebar,
+body.presentation-mode .win-resize{ display: none !important; }
+body.presentation-mode .os-desktop{ top: 0; bottom: 0; }
+body.presentation-mode .win{ border: none; box-shadow: none; }
+
+/* ---------------- Board terminal tools row ---------------- */
+.board-tools{ display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px 14px; }
 
 /* ---------------- Windows ---------------- */
 .win{
@@ -239,4 +303,8 @@ body { overflow: hidden; }
   .win-btn{ width: 30px; height: 30px; }
   .win-resize{ width: 24px; height: 24px; }
   .db-deeper{ letter-spacing: .35em; }
+  .desktop-hero-grid{ grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+  .compare-window{ inset: 3% 3%; }
+  .compare-grid-4{ grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+  .pip-widget{ width: 180px; right: 8px; bottom: 52px; }
 }

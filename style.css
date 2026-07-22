@@ -16,6 +16,18 @@
   --sidebar-w: 240px;
 }
 
+/* ---------------- Theme accent switcher ----------------
+   Every existing rule already reads --red for its accent color, so
+   swapping this one variable re-themes the whole app instantly. */
+html[data-theme="cyberpunk-green"]{
+  --red: #39ff14;
+  --panel-line: rgba(57, 255, 20, 0.25);
+}
+html[data-theme="electric-blue"]{
+  --red: #00b3ff;
+  --panel-line: rgba(0, 179, 255, 0.25);
+}
+
 *{ box-sizing: border-box; margin: 0; padding: 0; }
 html{ scroll-behavior: smooth; }
 body{
@@ -270,6 +282,64 @@ button, input, select, textarea{ font-family: var(--font-mono); }
 .lb-meta-row b{ color: var(--white); }
 
 /* ---------------- Zoom / pan / force-fullscreen ---------------- */
+/* ---------------- A/B loop range (dual overlapping sliders) ---------------- */
+.lb-ab-range{
+  position: absolute; left: 70px; right: 70px; bottom: 10px; z-index: 5;
+  display: flex; align-items: center; gap: 8px; height: 20px;
+}
+.lb-ab-label{ font-family: var(--font-mono); font-size: 10px; color: var(--red); flex-shrink: 0; }
+.lb-ab-range{ display: none; }
+.lb-ab-range:not([hidden]){ display: flex; }
+.lb-ab-range input[type="range"]{
+  flex: 1; position: relative; -webkit-appearance: none; appearance: none;
+  height: 2px; background: var(--panel-line); outline: none; margin: 0 -8px;
+}
+.lb-ab-range input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none; width: 12px; height: 12px; background: var(--red);
+  border-radius: 50%; cursor: pointer; pointer-events: auto;
+}
+#lb-ab-a{ margin-right: -100%; }
+
+.topbar-select, .lb-res-select{
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
+  background: var(--void); color: var(--white); border: 1px solid var(--panel-line);
+  padding: 6px 6px; cursor: pointer;
+}
+.topbar-select:focus, .lb-res-select:focus{ outline: none; border-color: var(--red); }
+
+/* ---------------- Picture-in-Picture mini-player ---------------- */
+.pip-widget{
+  position: fixed; right: 18px; bottom: 60px; width: 260px; z-index: 1500;
+  background: var(--panel); border: 1px solid var(--red); box-shadow: 6px 6px 0 rgba(255,0,0,.2);
+}
+.pip-head{
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; color: var(--steel-dim);
+  padding: 4px 8px; border-bottom: 1px solid var(--panel-line);
+}
+.pip-close{ background: transparent; border: none; color: var(--steel-dim); cursor: pointer; font-size: 11px; }
+.pip-close:hover{ color: var(--red); }
+.pip-widget video{ width: 100%; display: block; }
+
+/* ---------------- Compare Window (side-by-side sync scrub) ---------------- */
+.compare-window{
+  position: fixed; inset: 6% 8%; z-index: 1400;
+  background: var(--panel); border: 1px solid var(--red); box-shadow: 10px 10px 0 rgba(255,0,0,.2);
+  display: flex; flex-direction: column; padding: 14px;
+}
+.compare-head{ display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; margin-bottom: 10px; }
+.compare-head-actions{ display: flex; gap: 8px; align-items: center; }
+.compare-grid{ flex: 1; display: grid; gap: 8px; min-height: 0; }
+.compare-grid-2{ grid-template-columns: 1fr 1fr; }
+.compare-grid-4{ grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.compare-cell{ position: relative; background: var(--void); overflow: hidden; }
+.compare-cell video{ width: 100%; height: 100%; object-fit: contain; }
+.compare-label{
+  position: absolute; left: 6px; bottom: 6px; font-family: var(--font-mono); font-size: 10px;
+  background: rgba(0,0,0,.7); color: var(--white); padding: 2px 6px;
+}
+#compare-scrub{ width: 100%; margin-top: 10px; }
+
 .lb-media{ overflow: hidden; cursor: zoom-in; touch-action: none; }
 .lb-media img, .lb-media video{ transition: transform .06s linear; transform-origin: center center; will-change: transform; }
 .lb-media img.lb-zoomed{ cursor: grab; }

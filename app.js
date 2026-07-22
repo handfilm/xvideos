@@ -37,6 +37,19 @@
     r2FallbackToDrive: true
   };
 
+  // ---- Multi-resolution stream variants ----
+  // If your R2/Drive files are exported in multiple resolutions with a
+  // suffix before the extension (e.g. clip.mp4, clip_1080p.mp4,
+  // clip_720p.mp4), list the suffixes here. 'auto' never rewrites the
+  // filename (uses whatever the base file is). Missing variants simply
+  // 404 and the player falls back silently via bindVideoFallback.
+  var RESOLUTIONS = {
+    auto: { label: 'AUTO', suffix: '' },
+    '4k': { label: '4K', suffix: '_4k' },
+    '1080p': { label: '1080P', suffix: '_1080p' },
+    '720p': { label: '720P', suffix: '_720p' }
+  };
+
   var FOLDER_MIME = 'application/vnd.google-apps.folder';
   var DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
 
@@ -71,6 +84,38 @@
     t.classList.add('show');
     clearTimeout(showToast._t);
     showToast._t = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+
+  /* ================================================================
+     SUPER-APP STATE — resolution, theme, spotlight, sync, presentation.
+     Kept in one place so every subsystem below can read/write it.
+  ================================================================ */
+  var Super = {
+    resolution: loadPref('rawx_resolution', 'auto'),
+    theme: loadPref('rawx_theme', 'brutalist-red'),
+    spotlight: false,
+    presentation: false
+  };
+  // Every video currently in the DOM across grids, lightbox, compare window
+  // and the PiP widget — queried live (never cached) so it's always correct.
+  function allLiveVideos() { return qsa('.win-grid video, #lb-video, .compare-video, #pip-video'); }
+  function loadPref(key, fallback) {
+    try { return localStorage.getItem(key) || fallback; } catch (e) { return fallback; }
+  }
+  function savePref(key, val) {
+    try { localStorage.setItem(key, val); } catch (e) {}
+  }
+
+  // Rewrites a stream URL to request a specific resolution variant by
+  // inserting the suffix immediately before the file extension. Leaves
+  // non-video / auto untouched.
+  function applyResolution(url, resKey) {
+    if (!url) return url;
+    var variant = RESOLUTIONS[resKey] || RESOLUTIONS.auto;
+    if (!variant.suffix) return url;
+    var m = url.match(/^(.*)(\.[a-z0-9]+)(\?.*)?$/i);
+    if (!m) return url;
+    return m[1] + variant.suffix + m[2] + (m[3] || '');
   }
 
   /* ---------------- Drive fetch layer (lazy + cached) ---------------- */
@@ -220,7 +265,7 @@
   function isPinned(item) { return pinned.some(function (p) { return p.id === item.id; }); }
   function togglePin(item, ctx) {
     var idx = pinned.findIndex(function (p) { return p.id === item.id; });
-    if (idx === -1) pinned.push({ id: item.id, title: item.title, src: item.src, isVideo: item.isVideo, cat: ctx && ctx.catName, tag: ctx && ctx.tagName });
+    if (idx === -1) pinned.push({ id: item.id, title: item.title, src: item.src, streamSrc: item.streamSrc, isVideo: item.isVideo, cat: ctx && ctx.catName, tag: ctx && ctx.tagName });
     else pinned.splice(idx, 1);
     savePinned();
     renderPinCounts();
@@ -275,6 +320,7 @@
     focusWindow(id);
     renderWindowBody(w);
     renderTaskbar();
+    updateHeroDim();
     return w;
   }
 
@@ -284,9 +330,11 @@
     if (w.observer) w.observer.disconnect();
     if (w.scrollObserver) w.scrollObserver.disconnect();
     if (w.revealObserver) w.revealObserver.disconnect();
+    if (w.memoryGuard) w.memoryGuard.disconnect();
     if (w.dom) w.dom.remove();
     delete WM.windows[id];
     renderTaskbar();
+    updateHeroDim();
   }
 
   function focusWindow(id) {
@@ -298,6 +346,7 @@
     w.dom.classList.add('win-focused');
     WM.activeId = id;
     renderTaskbar();
+    updateHeroDim();
   }
 
   function minimizeWindow(id) {
@@ -421,6 +470,7 @@
     if (w.observer) { w.observer.disconnect(); w.observer = null; }
     if (w.scrollObserver) { w.scrollObserver.disconnect(); w.scrollObserver = null; }
     if (w.revealObserver) { w.revealObserver.disconnect(); w.revealObserver = null; }
+    if (w.memoryGuard) { w.memoryGuard.disconnect(); w.memoryGuard = null; }
 
     if (!w.tagId) {
       renderTagPicker(w, body);
@@ -482,6 +532,7 @@
         '<button class="win-chip-btn win-labels-btn' + (w.showLabels ? ' active' : '') + '" title="Show names on thumbnails">ⓘ INFO</button>' +
         '<button class="win-chip-btn win-speed-btn" title="Cycle preview playback speed">\u26a1 ' + w.speed + '\u00d7</button>' +
       '</div>' +
+      '<div class="win-tagchips"></div>' +
       '<div class="win-count">\u2014</div>' +
       '<div class="win-grid grid-size-' + w.gridSize + (w.showLabels ? ' labels-on' : '') + '"></div>' +
       '<div class="win-loadmore" hidden>LOAD MORE</div>' +
@@ -560,6 +611,34 @@
     return list;
   }
 
+  // Splits a filename on common delimiters (_, -, .) into normalized
+  // lowercase tokens for 1-click filter chips. Drops pure numbers and
+  // 1-character noise so chips stay meaningful.
+  function parseFilenameTags(name) {
+    return name.split(/[\s_\-.]+/).map(function (t) { return t.toLowerCase(); })
+      .filter(function (t) { return t.length > 1 && !/^\d+$/.test(t); });
+  }
+  function renderTagChips(w, body, items) {
+    var host = qs('.win-tagchips', body);
+    if (!host) return;
+    var counts = {};
+    items.forEach(function (it) { parseFilenameTags(it.title).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; }); });
+    var top = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 16);
+    host.innerHTML = '';
+    if (!top.length) return;
+    top.forEach(function (tag) {
+      var chip = el('button', 'tagchip' + (w.search.trim().toLowerCase() === tag ? ' active' : ''), escapeHtml(tag));
+      chip.addEventListener('click', function () {
+        var isActive = chip.classList.contains('active');
+        w.search = isActive ? '' : tag;
+        w.visibleCount = 30;
+        qs('.win-search', body).value = w.search;
+        paintGrid(w);
+      });
+      host.appendChild(chip);
+    });
+  }
+
   function paintGrid(w) {
     var body = qs('.win-body', w.dom);
     if (!body) return;
@@ -569,6 +648,7 @@
     var endEl = qs('.win-end', body);
     var cache = Drive.filePages[w.tagId] || { items: [], done: false };
 
+    renderTagChips(w, body, cache.items);
     w.filtered = computeFiltered(w);
     countEl.textContent = w.filtered.length + ' asset' + (w.filtered.length === 1 ? '' : 's') +
       (cache.done ? '' : ' (more loading as you scroll)');
@@ -613,7 +693,7 @@
     card.dataset.id = p.id;
     var media;
     if (p.isVideo) {
-      media = '<video class="asset-card-video" src="' + p.streamSrc + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" muted loop playsinline preload="metadata" data-autoplay="1"></video>' +
+      media = '<video class="asset-card-video" src="' + applyResolution(p.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(p.streamSrc || '') + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" muted loop playsinline preload="metadata" data-autoplay="1"></video>' +
         '<span class="asset-card-play">\u25b6</span>' +
         '<span class="asset-card-duration" hidden>0:00</span>' +
         '<div class="asset-card-progress"><span></span></div>';
@@ -699,6 +779,35 @@
       videos.forEach(function (v) { w.observer.observe(v); });
     }
 
+    // ---- Memory guard: fully detach <video> streams once a card drifts
+    // far off-screen (swap to poster-only), and only reattach the src
+    // once it drifts back near the viewport. Keeps memory bounded across
+    // windows with thousands of loops instead of every video tag holding
+    // a live decoder. Wider margin than the autoplay observer above so
+    // cards that are merely paused (not yet unloaded) get a buffer zone.
+    if (w.memoryGuard) { w.memoryGuard.disconnect(); w.memoryGuard = null; }
+    var guardVideos = qsa('.win-grid video[data-base-src]', body);
+    if (guardVideos.length && typeof IntersectionObserver !== 'undefined') {
+      w.memoryGuard = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var v = entry.target;
+          if (entry.isIntersecting) {
+            if (v.dataset.unloaded) {
+              v.src = applyResolution(v.getAttribute('data-base-src'), Super.resolution);
+              v.load();
+              delete v.dataset.unloaded;
+            }
+          } else if (!v.dataset.unloaded) {
+            v.pause();
+            v.removeAttribute('src');
+            v.load();
+            v.dataset.unloaded = '1';
+          }
+        });
+      }, { root: body, rootMargin: '1200px 0px', threshold: 0 });
+      guardVideos.forEach(function (v) { w.memoryGuard.observe(v); });
+    }
+
     // Reveal-in animation for every card (image or video) as it scrolls
     // into view — the mobile substitute for a mouse-hover preview.
     if (w.revealObserver) { w.revealObserver.disconnect(); w.revealObserver = null; }
@@ -766,6 +875,50 @@
       });
       bar.appendChild(btn);
     });
+  }
+
+  /* ---------------- Dynamic Canvas Hero Grid (homepage background) ----------------
+     Turns the blank desktop surface into a live, clickable video grid built
+     from the same lazy category/tag fetch the rest of the app uses. Hovering
+     a tile highlights it; clicking spawns a window for its category. The
+     whole grid darkens/blurs automatically whenever a floating window has
+     focus, so it reads as ambient background rather than competing content. */
+  function buildHeroGrid(categories) {
+    var host = qs('#desktop .desktop-hero-grid');
+    if (!host) {
+      host = el('div', 'desktop-hero-grid');
+      WM.desktop.insertBefore(host, WM.desktop.firstChild);
+    }
+    var sample = categories.slice(0, 6);
+    sample.forEach(function (cat) {
+      getTags(cat.id).then(function (tags) {
+        var tagId = tags.length ? tags[0].id : cat.id;
+        return fetchNextPage(tagId).then(function (cache) {
+          cache.items.slice(0, 8).forEach(function (item) {
+            var tile = el('div', 'hero-tile');
+            tile.innerHTML = item.isVideo
+              ? '<video src="' + applyResolution(item.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(item.streamSrc || '') + '" poster="' + item.poster + '" muted loop playsinline preload="none"></video>'
+              : '<img src="' + item.src + '" alt="" loading="lazy">';
+            tile.addEventListener('mouseenter', function () {
+              tile.classList.add('hero-hover');
+              var v = qs('video', tile); if (v) v.play().catch(function () {});
+            });
+            tile.addEventListener('mouseleave', function () {
+              tile.classList.remove('hero-hover');
+              var v = qs('video', tile); if (v) v.pause();
+            });
+            tile.addEventListener('click', function () { spawnWindow(cat); });
+            host.appendChild(tile);
+          });
+        });
+      }).catch(function () {});
+    });
+  }
+  // Darkens/blurs the hero grid whenever any window is open/focused —
+  // called from spawnWindow, focusWindow and closeWindow.
+  function updateHeroDim() {
+    var host = qs('#desktop .desktop-hero-grid');
+    if (host) host.classList.toggle('hero-dimmed', Object.keys(WM.windows).length > 0);
   }
 
   function buildCategoryTabs(categories) {
@@ -851,6 +1004,58 @@
     else resetZoom();
   }
 
+  /* ---------------- A/B loop range (lightbox) ---------------- */
+  // Dual sliders (0-100 representing % of duration) constrain playback to
+  // a custom in/out range — useful for picking a loop out of a long 4K clip.
+  var loopRange = { a: 0, b: 100 };
+  function bindLoopRange(video) {
+    loopRange = { a: 0, b: 100 };
+    var aInput = document.getElementById('lb-ab-a');
+    var bInput = document.getElementById('lb-ab-b');
+    aInput.value = 0; bInput.value = 100;
+    function enforce() {
+      if (!video.duration || !isFinite(video.duration)) return;
+      var startT = (loopRange.a / 100) * video.duration;
+      var endT = (loopRange.b / 100) * video.duration;
+      if (video.currentTime < startT) video.currentTime = startT;
+      if (video.currentTime >= endT) video.currentTime = startT;
+    }
+    video.addEventListener('timeupdate', enforce);
+    aInput.oninput = function () {
+      loopRange.a = Math.min(parseInt(aInput.value, 10), parseInt(bInput.value, 10) - 1);
+      aInput.value = loopRange.a;
+      if (video.duration) video.currentTime = (loopRange.a / 100) * video.duration;
+    };
+    bInput.oninput = function () {
+      loopRange.b = Math.max(parseInt(bInput.value, 10), parseInt(aInput.value, 10) + 1);
+      bInput.value = loopRange.b;
+    };
+  }
+
+  /* ---------------- Picture-in-Picture floating mini-player ---------------- */
+  // Grabs the lightbox video's current src + time and continues it in a
+  // small floating widget so browsing can continue with the clip still
+  // running. Independent of the native browser PiP API (works everywhere,
+  // matches the brutalist chrome).
+  var pip = { el: null };
+  function openPiP(sourceVideo) {
+    if (!sourceVideo) return;
+    closePiP();
+    var box = el('div', 'pip-widget');
+    box.innerHTML =
+      '<div class="pip-head"><span>MINI PLAYER</span><button class="pip-close" title="Close">\u2715</button></div>' +
+      '<video id="pip-video" src="' + sourceVideo.currentSrc + '" muted loop playsinline autoplay></video>';
+    document.body.appendChild(box);
+    var v = qs('video', box);
+    v.currentTime = sourceVideo.currentTime || 0;
+    v.play().catch(function () {});
+    qs('.pip-close', box).addEventListener('click', closePiP);
+    pip.el = box;
+  }
+  function closePiP() {
+    if (pip.el) { pip.el.remove(); pip.el = null; }
+  }
+
   function renderLightbox() {
     var w = lb.win;
     var p = w.filtered[lb.index];
@@ -858,10 +1063,16 @@
     var stage = document.getElementById('lb-media');
 
     if (p.isVideo) {
-      stage.innerHTML = '<video id="lb-video" src="' + p.streamSrc + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" controls autoplay loop playsinline></video>';
-      bindVideoFallback(document.getElementById('lb-video'));
+      stage.innerHTML = '<video id="lb-video" src="' + applyResolution(p.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(p.streamSrc || '') + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" controls autoplay loop playsinline></video>';
+      var lbVideoEl = document.getElementById('lb-video');
+      bindVideoFallback(lbVideoEl);
+      bindLoopRange(lbVideoEl);
+      qs('#lb-ab-range').hidden = false;
+      qs('#lb-pip-btn').hidden = false;
     } else {
       stage.innerHTML = '<img src="' + p.full + '" alt="' + escapeAttr(p.title) + '">';
+      qs('#lb-ab-range').hidden = true;
+      qs('#lb-pip-btn').hidden = true;
     }
     resetZoom();
 
@@ -937,6 +1148,83 @@
   function openBoard() { renderBoard(); document.getElementById('board-modal-overlay').classList.add('open'); }
   function closeBoard() { document.getElementById('board-modal-overlay').classList.remove('open'); }
 
+  /* ---------------- Batch export pinned R2/CDN links ---------------- */
+  function pinnedStreamUrl(p) {
+    // Newer pins carry their real resolved stream URL; older pins saved
+    // before this field existed fall back to the thumbnail src.
+    return p.streamSrc || p.src;
+  }
+  function exportPinnedLinks(format) {
+    if (!pinned.length) { showToast('BOARD IS EMPTY \u2014 PIN SOME ASSETS FIRST'); return; }
+    var content, mime, filename;
+    if (format === 'csv') {
+      var rows = [['title', 'category', 'tag', 'url']];
+      pinned.forEach(function (p) { rows.push([p.title, p.cat || '', p.tag || '', pinnedStreamUrl(p)]); });
+      content = rows.map(function (r) {
+        return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+      }).join('\n');
+      mime = 'text/csv'; filename = 'rawx-board-export.csv';
+    } else {
+      content = pinned.map(pinnedStreamUrl).join('\n');
+      mime = 'text/plain'; filename = 'rawx-board-export.txt';
+    }
+    var blob = new Blob([content], { type: mime + ';charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = el('a', null);
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    showToast('EXPORTED ' + pinned.length + ' LINK' + (pinned.length === 1 ? '' : 'S') + ' (' + format.toUpperCase() + ')');
+  }
+
+  /* ---------------- Compare Window: 2 or 4 pinned videos, synced scrub ---------------- */
+  function openCompareFromBoard() {
+    var candidates = pinned.filter(function (p) { return p.isVideo; });
+    if (candidates.length < 2) { showToast('PIN AT LEAST 2 VIDEOS TO COMPARE'); return; }
+    var picks = candidates.slice(0, candidates.length >= 4 ? 4 : 2);
+    closeBoard();
+    openCompareWindow(picks);
+  }
+  function openCompareWindow(items) {
+    var existing = document.getElementById('compare-window');
+    if (existing) existing.remove();
+    var win = el('div', 'compare-window');
+    win.id = 'compare-window';
+    win.innerHTML =
+      '<div class="compare-head">' +
+        '<span>SIDE-BY-SIDE COMPARE \u2014 ' + items.length + ' CLIPS</span>' +
+        '<div class="compare-head-actions">' +
+          '<button class="win-chip-btn" id="compare-sync-btn">\u21bb SYNC SCRUB</button>' +
+          '<button class="win-btn win-close" id="compare-close-btn" title="Close">\u2715</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="compare-grid compare-grid-' + items.length + '"></div>' +
+      '<input type="range" id="compare-scrub" min="0" max="100" value="0" step="0.1">';
+    document.body.appendChild(win);
+    var grid = qs('.compare-grid', win);
+    items.forEach(function (p) {
+      var cell = el('div', 'compare-cell');
+      cell.innerHTML = '<video class="compare-video" src="' + applyResolution(pinnedStreamUrl(p), Super.resolution) +
+        '" data-base-src="' + escapeAttr(pinnedStreamUrl(p)) + '" muted loop playsinline autoplay></video>' +
+        '<span class="compare-label">' + escapeHtml(p.title) + '</span>';
+      grid.appendChild(cell);
+    });
+    var scrub = qs('#compare-scrub', win);
+    scrub.addEventListener('input', function () {
+      var vids = qsa('.compare-video', win);
+      vids.forEach(function (v) {
+        if (v.duration && isFinite(v.duration)) v.currentTime = (scrub.value / 100) * v.duration;
+      });
+    });
+    qs('#compare-sync-btn', win).addEventListener('click', function () {
+      var vids = qsa('.compare-video', win);
+      var t = vids[0] ? vids[0].currentTime : 0;
+      vids.forEach(function (v) { if (v.duration) v.currentTime = t % v.duration; });
+      showToast('COMPARE CLIPS SYNCED');
+    });
+    qs('#compare-close-btn', win).addEventListener('click', function () { win.remove(); });
+  }
+
   /* ---------------- Global events ---------------- */
   function bindGlobalEvents() {
     document.getElementById('lb-close').addEventListener('click', closeLightbox);
@@ -950,6 +1238,117 @@
     document.getElementById('lightbox').addEventListener('click', function (e) { if (e.target.id === 'lightbox') closeLightbox(); });
     document.getElementById('lb-fullscreen-btn').addEventListener('click', toggleForceFullscreen);
     document.getElementById('lb-auto-btn').addEventListener('click', toggleAuto);
+    document.getElementById('lb-pip-btn').addEventListener('click', function () {
+      var v = document.getElementById('lb-video');
+      if (!v) return;
+      openPiP(v);
+      closeLightbox();
+    });
+
+    /* ---- Resolution selector (top bar + lightbox + mobile sheet) ---- */
+    function applyResolutionEverywhere(resKey) {
+      Super.resolution = resKey;
+      savePref('rawx_resolution', resKey);
+      qsa('.res-select').forEach(function (sel) { sel.value = resKey; });
+      allLiveVideos().forEach(function (v) {
+        var base = v.getAttribute('data-base-src');
+        if (!base) return;
+        var t = v.currentTime;
+        var wasPlaying = !v.paused;
+        v.src = applyResolution(base, resKey);
+        v.currentTime = t;
+        if (wasPlaying) v.play().catch(function () {});
+      });
+    }
+    qsa('.res-select').forEach(function (sel) {
+      sel.value = Super.resolution;
+      sel.addEventListener('change', function (e) { applyResolutionEverywhere(e.target.value); });
+    });
+
+    /* ---- Theme accent switcher (top bar + mobile sheet) ---- */
+    document.documentElement.setAttribute('data-theme', Super.theme);
+    qsa('.theme-select').forEach(function (sel) {
+      sel.value = Super.theme;
+      sel.addEventListener('change', function (e) {
+        Super.theme = e.target.value;
+        savePref('rawx_theme', Super.theme);
+        document.documentElement.setAttribute('data-theme', Super.theme);
+        qsa('.theme-select').forEach(function (s) { s.value = Super.theme; });
+      });
+    });
+
+    /* ---- Sync All Loops: time-align every currently playing video ---- */
+    qsa('.sync-loops-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var vids = allLiveVideos().filter(function (v) { return !v.paused && isFinite(v.duration) && v.duration > 0; });
+        if (!vids.length) { showToast('NO PLAYING LOOPS TO SYNC'); return; }
+        var t = vids[0].currentTime;
+        vids.forEach(function (v) { v.currentTime = t % v.duration; });
+        showToast('SYNCED ' + vids.length + ' LOOP' + (vids.length === 1 ? '' : 'S'));
+      });
+    });
+
+    /* ---- Spotlight Hover: dim every card except the one under the cursor ---- */
+    qsa('.spotlight-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        Super.spotlight = !Super.spotlight;
+        qsa('.spotlight-btn').forEach(function (b) { b.classList.toggle('active', Super.spotlight); });
+        document.body.classList.toggle('spotlight-mode', Super.spotlight);
+        if (!Super.spotlight) qsa('.asset-card.spotlight-dim, .asset-card.spotlight-target').forEach(function (c) {
+          c.classList.remove('spotlight-dim', 'spotlight-target');
+        });
+      });
+    });
+    WM.desktop && WM.desktop.addEventListener('mouseover', function (e) {
+      if (!Super.spotlight) return;
+      var card = e.target.closest('.asset-card');
+      if (!card) return;
+      qsa('.asset-card').forEach(function (c) {
+        c.classList.toggle('spotlight-target', c === card);
+        c.classList.toggle('spotlight-dim', c !== card);
+      });
+    });
+    WM.desktop && WM.desktop.addEventListener('mouseout', function (e) {
+      if (!Super.spotlight) return;
+      if (e.target.closest('.asset-card') && !e.relatedTarget) {
+        qsa('.asset-card').forEach(function (c) { c.classList.remove('spotlight-target', 'spotlight-dim'); });
+      }
+    });
+
+    /* ---- Mobile settings sheet: gear button opens/closes the panel ---- */
+    var mobileSettingsBtn = document.getElementById('mobile-settings-btn');
+    var mobileSheet = document.getElementById('mobile-settings-sheet');
+    if (mobileSettingsBtn && mobileSheet) {
+      mobileSettingsBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        mobileSheet.classList.toggle('open');
+      });
+      document.addEventListener('click', function (e) {
+        if (mobileSheet.classList.contains('open') && !mobileSheet.contains(e.target) && e.target !== mobileSettingsBtn) {
+          mobileSheet.classList.remove('open');
+        }
+      });
+    }
+    var mobilePresentationBtn = document.getElementById('mobile-presentation-btn');
+    if (mobilePresentationBtn) {
+      mobilePresentationBtn.addEventListener('click', function () {
+        Super.presentation = !Super.presentation;
+        document.body.classList.toggle('presentation-mode', Super.presentation);
+        mobilePresentationBtn.classList.toggle('active', Super.presentation);
+        if (mobileSheet) mobileSheet.classList.remove('open');
+        showToast(Super.presentation ? 'PRESENTATION MODE \u2014 TAP \u2699 TO EXIT' : 'PRESENTATION MODE OFF');
+      });
+    }
+
+    /* ---- Compare Window: 2 or 4 pinned videos, synced scrubbing ---- */
+    var compareBtn = document.getElementById('board-compare-btn');
+    if (compareBtn) compareBtn.addEventListener('click', openCompareFromBoard);
+
+    /* ---- Batch export pinned links ---- */
+    var exportTxtBtn = document.getElementById('board-export-txt-btn');
+    if (exportTxtBtn) exportTxtBtn.addEventListener('click', function () { exportPinnedLinks('txt'); });
+    var exportCsvBtn = document.getElementById('board-export-csv-btn');
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', function () { exportPinnedLinks('csv'); });
 
     // ---- Mobile tap dock: every command gets a real button, no keyboard needed ----
     document.getElementById('lb-dock-prev').addEventListener('click', function () { lbStep(-1); });
@@ -1053,6 +1452,17 @@
 
     document.addEventListener('keydown', function (e) {
       var typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+      // Shift+P — clean client-pitch presentation mode: hides topbar,
+      // taskbar and window chrome for a full-screen walkthrough.
+      if (!typing && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        Super.presentation = !Super.presentation;
+        document.body.classList.toggle('presentation-mode', Super.presentation);
+        var mpBtn = document.getElementById('mobile-presentation-btn');
+        if (mpBtn) mpBtn.classList.toggle('active', Super.presentation);
+        showToast(Super.presentation ? 'PRESENTATION MODE \u2014 SHIFT+P TO EXIT' : 'PRESENTATION MODE OFF');
+        return;
+      }
       if (document.getElementById('lightbox').classList.contains('open')) {
         // Escape always closes (and drops fullscreen with it, see closeLightbox)
         if (e.key === 'Escape') { closeLightbox(); return; }
@@ -1091,6 +1501,7 @@
       } else {
         buildCategoryTabs(categories);
         buildLauncherMenu(categories);
+        buildHeroGrid(categories);
         spawnWindow(categories[0]);
       }
 
