@@ -1,0 +1,152 @@
+/* ============================================================
+   RAWX MOTION LAB — CONTENT STUDIO LAYER (additive only)
+   Loaded after chatbot.css. Scoped entirely to .rwx-cs-* classes
+   so it can never collide with style.css, desktop.css,
+   dashboard.css, super.css, or chatbot.css. Uses the same design
+   tokens (--void, --panel, --red, --white, --steel-dim,
+   --panel-line, --font-display, --font-mono) defined in style.css.
+============================================================ */
+
+/* ---------------- Toggle button (right side, mirrors chat toggle on left) ---------------- */
+.rwx-cs-toggle{
+  position: fixed; right: 14px; bottom: 16px; z-index: 1700;
+  display: flex; align-items: center; gap: 7px;
+  background: var(--panel); border: 1px solid var(--panel-line);
+  color: var(--steel-dim); font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: .1em; padding: 10px 14px; cursor: pointer;
+  box-shadow: -6px 6px 0 rgba(255,0,0,.16);
+  transition: color .15s ease, border-color .15s ease;
+}
+.rwx-cs-toggle:hover{ color: var(--white); border-color: var(--red); }
+.rwx-cs-toggle .rwx-cs-dot{
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+}
+.rwx-cs-toggle.rwx-cs-hide{ display: none; }
+
+/* ---------------- Panel ---------------- */
+.rwx-cs-panel{
+  position: fixed; right: 14px; bottom: 16px; z-index: 1700;
+  width: min(440px, 94vw); height: min(620px, 82vh);
+  background: var(--panel); border: 1px solid var(--red);
+  box-shadow: -8px 8px 0 rgba(255,0,0,.2);
+  display: none; flex-direction: column;
+  font-family: var(--font-mono);
+}
+.rwx-cs-panel.open{ display: flex; }
+
+.rwx-cs-head{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: var(--panel-2); border-bottom: 1px solid var(--panel-line);
+}
+.rwx-cs-head-title{ font-size: 11px; letter-spacing: .12em; color: var(--white); }
+.rwx-cs-head-title b{ color: var(--red); }
+.rwx-cs-close{
+  background: transparent; border: 1px solid var(--panel-line); color: var(--steel-dim);
+  font-size: 11px; padding: 4px 8px; cursor: pointer;
+}
+.rwx-cs-close:hover{ color: var(--white); border-color: var(--red); }
+
+/* ---------------- Tabs (Generate / History / Settings) ---------------- */
+.rwx-cs-tabs{ display: flex; border-bottom: 1px solid var(--panel-line); }
+.rwx-cs-tab{
+  flex: 1; background: transparent; border: none; color: var(--steel-dim);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; padding: 10px 4px; cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.rwx-cs-tab:hover{ color: var(--white); }
+.rwx-cs-tab.rwx-active{ color: var(--red); border-bottom-color: var(--red); }
+
+.rwx-cs-view{ flex: 1; overflow-y: auto; display: none; padding: 14px; flex-direction: column; gap: 12px; }
+.rwx-cs-view.rwx-active{ display: flex; }
+
+/* ---------------- Form controls ---------------- */
+.rwx-cs-field{ display: flex; flex-direction: column; gap: 6px; }
+.rwx-cs-field label{ font-size: 9.5px; letter-spacing: .12em; color: var(--steel-dim); }
+.rwx-cs-row{ display: flex; gap: 8px; }
+.rwx-cs-row .rwx-cs-field{ flex: 1; }
+
+.rwx-cs-select, .rwx-cs-textarea, .rwx-cs-input{
+  width: 100%; background: var(--panel-2); border: 1px solid var(--panel-line); color: var(--white);
+  font-family: var(--font-mono); font-size: 11.5px; padding: 9px 10px; box-sizing: border-box;
+}
+.rwx-cs-select:focus, .rwx-cs-textarea:focus, .rwx-cs-input:focus{ outline: none; border-color: var(--red); }
+.rwx-cs-textarea{ resize: vertical; min-height: 76px; line-height: 1.5; }
+.rwx-cs-input::placeholder, .rwx-cs-textarea::placeholder{ color: var(--steel-dim); }
+
+.rwx-cs-generate-btn{
+  background: var(--red); color: var(--void); border: none; font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .1em; padding: 12px; cursor: pointer; font-weight: 700;
+}
+.rwx-cs-generate-btn:hover{ filter: brightness(1.1); }
+.rwx-cs-generate-btn:disabled{ opacity: .45; cursor: default; }
+
+/* ---------------- Output ---------------- */
+.rwx-cs-output-wrap{ display: none; flex-direction: column; gap: 8px; }
+.rwx-cs-output-wrap.rwx-show{ display: flex; }
+.rwx-cs-output{
+  background: var(--panel-2); border: 1px solid var(--panel-line); color: var(--white);
+  font-size: 12px; line-height: 1.65; padding: 12px; white-space: pre-wrap; word-break: break-word;
+  max-height: 220px; overflow-y: auto;
+}
+.rwx-cs-output-meta{ font-size: 9.5px; letter-spacing: .08em; color: var(--steel-dim); display: flex; justify-content: space-between; }
+.rwx-cs-output-actions{ display: flex; gap: 8px; }
+.rwx-cs-output-actions button{
+  flex: 1; background: transparent; border: 1px solid var(--panel-line); color: var(--steel-dim);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; padding: 8px; cursor: pointer;
+}
+.rwx-cs-output-actions button:hover{ color: var(--white); border-color: var(--red); }
+
+.rwx-cs-typing{
+  display: flex; gap: 4px; padding: 12px; background: var(--panel-2); border: 1px solid var(--panel-line);
+}
+.rwx-cs-typing span{
+  width: 5px; height: 5px; border-radius: 50%; background: var(--steel-dim);
+  animation: rwx-cs-blink 1s infinite ease-in-out;
+}
+.rwx-cs-typing span:nth-child(2){ animation-delay: .15s; }
+.rwx-cs-typing span:nth-child(3){ animation-delay: .3s; }
+@keyframes rwx-cs-blink{ 0%,80%,100%{ opacity: .25; } 40%{ opacity: 1; } }
+
+.rwx-cs-error{
+  border: 1px solid var(--red); color: var(--red); font-size: 11px; padding: 10px 12px; letter-spacing: .02em; line-height: 1.5;
+}
+
+/* ---------------- History ---------------- */
+.rwx-cs-history-item{
+  border: 1px solid var(--panel-line); padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+}
+.rwx-cs-history-item:hover{ border-color: var(--red); }
+.rwx-cs-history-item-meta{ font-size: 9px; letter-spacing: .08em; color: var(--red); display: flex; justify-content: space-between; }
+.rwx-cs-history-item-preview{ font-size: 11px; color: var(--steel-dim); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.rwx-cs-history-empty{ font-size: 11px; color: var(--steel-dim); letter-spacing: .04em; padding: 20px 0; text-align: center; }
+.rwx-cs-history-clear{
+  align-self: flex-start; background: transparent; border: 1px solid var(--panel-line); color: var(--steel-dim);
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; padding: 6px 10px; cursor: pointer;
+}
+.rwx-cs-history-clear:hover{ color: var(--red); border-color: var(--red); }
+
+/* ---------------- Settings ---------------- */
+.rwx-cs-hint{ font-size: 10.5px; color: var(--steel-dim); line-height: 1.6; }
+.rwx-cs-hint code{ color: var(--red); background: var(--panel-2); padding: 1px 5px; }
+.rwx-cs-status-row{ display: flex; align-items: center; gap: 8px; font-size: 10.5px; }
+.rwx-cs-status-dot{ width: 8px; height: 8px; border-radius: 50%; background: var(--steel-dim); }
+.rwx-cs-status-dot.rwx-ok{ background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+.rwx-cs-status-dot.rwx-bad{ background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+/* ---------------- Mobile ---------------- */
+@media (max-width: 480px){
+  .rwx-cs-panel{
+    left: 0; right: 0; bottom: 0; width: 100vw; height: 82vh;
+    border-left: none; border-right: none;
+  }
+  .rwx-cs-toggle{ right: 10px; bottom: 10px; }
+}
+
+/* When both chatbot + content studio toggles are present on the same
+   viewport width, keep them from overlapping on very narrow screens
+   by nudging the chat toggle up a row on mobile — additive, doesn't
+   touch chatbot.css. */
+@media (max-width: 480px){
+  .rwx-chat-toggle{ bottom: 10px; }
+}
