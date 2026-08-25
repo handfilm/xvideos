@@ -1,0 +1,14 @@
+{
+  "name": "rawx-motion-lab",
+  "version": "1.0.0",
+  "description": "RAWX Motion Lab - AI Character Consistency Experiment",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Static build ready'",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

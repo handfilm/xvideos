@@ -1,0 +1,8 @@
+{
+  "name": "RAWX Motion Lab",
+  "description": "AI character-consistent motion clips catalog for lingerie and activewear, with desktop OS interface, continuous looping feed, media lightbox, and B2B board.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
