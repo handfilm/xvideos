@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAWX SUPER ALBUM — Mega Motion Experience // HANDFILM</title>
+<meta name="description" content="Massive cinema video album, auto-sequenced slideshows, editorial typographic layovers, audio-visualizer soundstage, multi-camera splitwall, and 4K showcase.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,900;1,700;1,900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;800;900&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="super.css">
+<link rel="stylesheet" href="super-album.css">
+<link rel="stylesheet" href="chatbot.css">
+</head>
+<body class="album-body">
+
+<!-- Ambient Stage Canvas for audio reactive / cinema aura -->
+<canvas id="album-ambient-canvas" class="album-ambient-canvas"></canvas>
+
+<!-- Top Fixed Command Bar -->
+<header class="album-topbar" id="album-topbar">
+  <div class="album-brand">
+    <a href="index.html" class="album-brand-logo">
+      <span class="album-rx-badge">RX</span>
+      <div class="album-brand-text">
+        <span class="album-title-main">SUPER VIDEO ALBUM</span>
+        <span class="album-title-sub">MASSIVE CINEMA ARCHIVE // EDITION 2026</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="panels-nav-wrap">
+    <button class="panels-nav-btn" id="panels-nav-btn">PANELS ▾</button>
+    <div class="panels-menu" id="panels-menu">
+      <a href="album.html" class="panels-item panels-item-current">SUPER ALBUM <span>Massive Slideshows & Layovers — you are here</span></a>
+      <a href="index.html" class="panels-item">LAB <span>Desktop OS Workstation</span></a>
+      <a href="dashboard.html" class="panels-item">DEEPER <span>Infinite Looping Feed</span></a>
+      <a href="https://hub.handsandhead.com" class="panels-item">HUB <span>Central Index</span></a>
+      <a href="https://lingerie.handsandhead.com/index-b2b.html" class="panels-item">B2B LOOKBOOK <span>Wholesale Lookbook ↗</span></a>
+      <a href="https://bloom-app.handsandhead.com" class="panels-item" target="_blank" rel="noopener">BLOOM <span>AI Text Generator ↗</span></a>
+      <a href="https://vault.handsandhead.com" class="panels-item" target="_blank" rel="noopener">VAULT <span>Asset Terminal ↗</span></a>
+      <a href="https://os.handsandhead.com" class="panels-item" target="_blank" rel="noopener">OS <span>Motion OS ↗</span></a>
+    </div>
+  </div>
+
+  <!-- Mode Selector Pills -->
+  <div class="album-view-modes" id="album-view-modes">
+    <button class="album-mode-btn active" data-mode="cinema" title="Full immersion editorial cinema slideshow">
+      <span class="mode-icon">✦</span> CINEMA SLIDESHOW
+    </button>
+    <button class="album-mode-btn" data-mode="wall" title="Massive 3D wall & infinite motion reel">
+      <span class="mode-icon">▦</span> MEGA WALL
+    </button>
+    <button class="album-mode-btn" data-mode="split" title="Multi-camera 4-angle sync comparison deck">
+      <span class="mode-icon">⚏</span> MULTI-CAM SPLIT
+    </button>
+    <button class="album-mode-btn" data-mode="curated" title="Browse by high-fashion motion lookbooks">
+      <span class="mode-icon">❖</span> LOOKBOOK REELS
+    </button>
+  </div>
+
+  <!-- Right Command Actions -->
+  <div class="album-topbar-actions">
+    <button class="album-action-btn" id="btn-slideshow-toggle" title="Play / Pause Slideshow">
+      <span class="action-icon" id="slideshow-icon">❚❚</span> <span id="slideshow-text">AUTO 6s</span>
+    </button>
+    <button class="album-action-btn" id="btn-sound-toggle" title="Audio / Visualizer Drone Synth">
+      <span class="action-icon">♫</span> SOUND
+    </button>
+    <button class="album-action-btn" id="btn-text-toggle" title="Toggle Typographic Text Layover Stems">
+      <span class="action-icon">☷</span> LAYOVER <b class="indicator-on">ON</b>
+    </button>
+    <button class="album-action-btn" id="btn-fullscreen" title="Full Immersion Fullscreen">
+      <span class="action-icon">⛶</span> FULL
+    </button>
+    <select class="album-select" id="theme-select" title="Color Theme">
+      <option value="brutalist-red">BRUTALIST RED</option>
+      <option value="cyberpunk-green">CYBERPUNK GREEN</option>
+      <option value="electric-blue">ELECTRIC BLUE</option>
+    </select>
+  </div>
+</header>
+
+<!-- ================= MAIN EXPERIENCE CONTAINER ================= -->
+<main class="album-main" id="album-main">
+
+  <!-- ================= VIEW 1: CINEMA SLIDESHOW ================= -->
+  <section class="album-view album-view-cinema active" id="view-cinema">
+    
+    <!-- Mega Background Stage Video Container -->
+    <div class="cinema-stage" id="cinema-stage">
+      <div class="cinema-stage-layers" id="cinema-stage-layers">
+        <!-- Slides are rendered here with active & next crossfading -->
+      </div>
+      
+      <!-- Vignette and Editorial Texture Gradients -->
+      <div class="cinema-grain"></div>
+      <div class="cinema-vignette"></div>
+
+      <!-- ================= MASSIVE TEXT LAYOVERS (Editorial Stems) ================= -->
+      <div class="cinema-layover-container" id="cinema-layover">
+        <div class="layover-meta-top">
+          <div class="layover-chip">
+            <span class="pulse-dot"></span>
+            <span id="layover-cat">SIGNATURE // ACTIVE MOTION</span>
+          </div>
+          <div class="layover-timecode" id="layover-timecode">REC 00:04:12:18 // 60FPS 4K</div>
+          <div class="layover-badge" id="layover-badge">CHAR-CONSISTENT AI</div>
+        </div>
+
+        <div class="layover-hero-text">
+          <h1 class="layover-massive-title" id="layover-title">HYPER-KINETIC FLOW</h1>
+          <p class="layover-massive-tagline" id="layover-tagline">AN EXPLORATION OF SEAMLESS FABRIC DYNAMICS, TENSION, &amp; ANATOMICAL MOTION IN ULTRA DEFINITION.</p>
+        </div>
+
+        <div class="layover-meta-bottom">
+          <div class="layover-specs-grid">
+            <div class="spec-cell"><label>ASSET ID</label><span id="spec-id">RAWX-0824-SIG</span></div>
+            <div class="spec-cell"><label>MOTION TYPE</label><span id="spec-motion">360° ORBITAL ROTATION</span></div>
+            <div class="spec-cell"><label>FABRIC PROFILE</label><span id="spec-fabric">HIGH-STRETCH COMPRESSION</span></div>
+            <div class="spec-cell"><label>ASPECT RATIO</label><span id="spec-aspect">9:16 VERTICAL CINEMA</span></div>
+          </div>
+
+          <div class="layover-playback-cluster">
+            <div class="layover-progress-wrap">
+              <div class="layover-progress-bar"><span id="layover-progress-fill"></span></div>
+              <div class="layover-progress-nums">
+                <span id="layover-curr-slide">01</span> / <span id="layover-total-slides">24</span>
+              </div>
+            </div>
+            <div class="layover-quick-ctrls">
+              <button class="layover-ctrl-btn" id="btn-prev-slide" title="Previous Slide (Arrow Left)">← PREV</button>
+              <button class="layover-ctrl-btn layover-play-btn" id="btn-pause-slide" title="Pause / Play (Space)">PAUSE</button>
+              <button class="layover-ctrl-btn" id="btn-next-slide" title="Next Slide (Arrow Right)">NEXT →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide Navigation Thumb Filmstrip -->
+      <div class="cinema-filmstrip-drawer" id="cinema-filmstrip-drawer">
+        <div class="filmstrip-header">
+          <span>ALBUM FILMSTRIP REEL (<span id="filmstrip-count">0</span> ASSETS)</span>
+          <button class="filmstrip-toggle-btn" id="filmstrip-toggle-btn">HIDE REEL ▾</button>
+        </div>
+        <div class="filmstrip-track" id="filmstrip-track">
+          <!-- Filmstrip thumbnails injected here -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VIEW 2: MEGA 3D WALL ================= -->
+  <section class="album-view album-view-wall" id="view-wall">
+    <div class="wall-header-bar">
+      <div class="wall-title-block">
+        <h2>MASSIVE MOTION GRID &amp; ARCHIVE REEL</h2>
+        <p>Interactive masonry feed of the entire motion catalog. Click any tile to launch instant cinema immersion or pin to lookbook.</p>
+      </div>
+      <div class="wall-filter-bar">
+        <input type="text" class="wall-search-input" id="wall-search-input" placeholder="SEARCH ASSETS / FABRIC / MOVEMENT…">
+        <select class="album-select" id="wall-cat-select">
+          <option value="">ALL COLLECTIONS</option>
+        </select>
+        <select class="album-select" id="wall-sort-select">
+          <option value="curated">CURATED ORDER</option>
+          <option value="latest">LATEST ADDITIONS</option>
+          <option value="shuffle">RANDOM SHUFFLE</option>
+        </select>
+        <div class="wall-density-btns">
+          <button class="wall-dense-btn" data-cols="3">3 COL</button>
+          <button class="wall-dense-btn active" data-cols="4">4 COL</button>
+          <button class="wall-dense-btn" data-cols="6">6 COL</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="wall-grid" id="wall-grid">
+      <!-- Mega video cards injected here -->
+    </div>
+  </section>
+
+  <!-- ================= VIEW 3: MULTI-CAM SPLIT SCREEN ================= -->
+  <section class="album-view album-view-split" id="view-split">
+    <div class="split-header-bar">
+      <div class="split-info">
+        <h2>4-WAY MULTI-CAMERA SYNCHRONIZED COMPARISON DECK</h2>
+        <p>Compare character angles, dynamic lighting setups, and motion flow locked to a universal clock.</p>
+      </div>
+      <div class="split-controls">
+        <button class="album-action-btn" id="btn-split-sync">⟳ RE-SYNC PLAYHEADS</button>
+        <button class="album-action-btn" id="btn-split-cycle">⚡ CYCLE PRESETS</button>
+      </div>
+    </div>
+
+    <div class="split-quad-grid" id="split-quad-grid">
+      <div class="split-quad-cell" id="quad-1" data-slot="0">
+        <div class="quad-meta">CAM 01 // FRONT ELEVATION <span class="quad-tag">PRIMARY</span></div>
+        <div class="quad-video-wrap"></div>
+        <div class="quad-overlay"><h3>FRONTAL CADENCE</h3></div>
+      </div>
+      <div class="split-quad-cell" id="quad-2" data-slot="1">
+        <div class="quad-meta">CAM 02 // 45° OBLIQUE VIEW <span class="quad-tag">PROFILE</span></div>
+        <div class="quad-video-wrap"></div>
+        <div class="quad-overlay"><h3>OBLIQUE DYNAMICS</h3></div>
+      </div>
+      <div class="split-quad-cell" id="quad-3" data-slot="2">
+        <div class="quad-meta">CAM 03 // POSTERIOR / BACK STUDY <span class="quad-tag">TENSION</span></div>
+        <div class="quad-video-wrap"></div>
+        <div class="quad-overlay"><h3>POSTERIOR LATERAL</h3></div>
+      </div>
+      <div class="split-quad-cell" id="quad-4" data-slot="3">
+        <div class="quad-meta">CAM 04 // MACRO FABRIC FOCUS <span class="quad-tag">TEXTURE</span></div>
+        <div class="quad-video-wrap"></div>
+        <div class="quad-overlay"><h3>MICRO TEXTURE</h3></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VIEW 4: CURATED LOOKBOOK REELS ================= -->
+  <section class="album-view album-view-curated" id="view-curated">
+    <div class="lookbook-hero-banner">
+      <h2>EDITORIAL LOOKBOOK REELS</h2>
+      <p>High-concept motion series curated by lighting, posture, and kinetic silhouette.</p>
+    </div>
+    <div class="lookbook-collections" id="lookbook-collections">
+      <!-- Curated collections accordion/carousels injected here -->
+    </div>
+  </section>
+
+</main>
+
+<!-- Floating Visualizer Bar at bottom when sound is on -->
+<div class="album-visualizer-bar" id="album-visualizer-bar">
+  <div class="visualizer-bars">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="visualizer-info">RAWX AMBIENT FREQUENCY DRONE // 432HZ SYNTH</div>
+</div>
+
+<!-- Toast Notice -->
+<div class="toast" id="toast"></div>
+
+<!-- Quick Keyboard Shortcuts Modal Hint -->
+<div class="album-keys-hint" id="album-keys-hint">
+  <span><kbd>SPACE</kbd> Play/Pause</span>
+  <span><kbd>←</kbd><kbd>→</kbd> Prev/Next</span>
+  <span><kbd>T</kbd> Toggle Text</span>
+  <span><kbd>F</kbd> Fullscreen</span>
+  <span><kbd>M</kbd> Modes</span>
+  <span><kbd>S</kbd> Sound</span>
+</div>
+
+<script src="super-album.js"></script>
+<script src="super.js"></script>
+</body>
+</html>

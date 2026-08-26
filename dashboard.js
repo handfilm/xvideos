@@ -458,14 +458,129 @@
   /* ================================================================
      BOARD / B2B TERMINAL
   ================================================================ */
+  var boardDrag = { sourceIndex: null, touchTargetIndex: null };
+
   function renderBoard() {
     var thumbs = document.getElementById('board-thumbs');
     var emptyEl = document.getElementById('modal-body-empty');
+    var hintEl = document.getElementById('board-reorder-hint');
+    if (!thumbs) return;
     thumbs.innerHTML = '';
-    emptyEl.hidden = pinned.length > 0;
-    pinned.forEach(function (p) {
-      var thumb = el('div', 'board-thumb', '<img src="' + p.src + '" alt="' + escapeHtml(p.title) + '"><button title="Remove">\u2715</button>');
-      qs('button', thumb).addEventListener('click', function () { togglePin(p); renderBoard(); });
+    if (emptyEl) emptyEl.hidden = pinned.length > 0;
+    if (hintEl) hintEl.hidden = pinned.length <= 1;
+
+    pinned.forEach(function (p, i) {
+      var thumb = el('div', 'board-thumb');
+      thumb.draggable = true;
+      thumb.dataset.index = i;
+      thumb.dataset.id = p.id;
+      thumb.title = 'Drag to reorder (# ' + (i + 1) + ' \u2014 ' + escapeHtml(p.title || '') + ')';
+
+      thumb.innerHTML =
+        '<img src="' + p.src + '" alt="' + escapeHtml(p.title) + '">' +
+        '<span class="board-thumb-idx">' + (i + 1) + '</span>' +
+        '<span class="board-thumb-grip" title="Drag to reorder">\u283f</span>' +
+        '<button class="board-thumb-remove" title="Remove">\u2715</button>';
+
+      var removeBtn = qs('.board-thumb-remove', thumb);
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          togglePin(p);
+          renderBoard();
+        });
+      }
+
+      // Drag and Drop (HTML5)
+      thumb.addEventListener('dragstart', function (e) {
+        boardDrag.sourceIndex = i;
+        thumb.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(i));
+      });
+
+      thumb.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (boardDrag.sourceIndex !== null && boardDrag.sourceIndex !== i) {
+          thumb.classList.add('drag-over');
+        }
+      });
+
+      thumb.addEventListener('dragenter', function (e) {
+        e.preventDefault();
+        if (boardDrag.sourceIndex !== null && boardDrag.sourceIndex !== i) {
+          thumb.classList.add('drag-over');
+        }
+      });
+
+      thumb.addEventListener('dragleave', function () {
+        thumb.classList.remove('drag-over');
+      });
+
+      thumb.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        thumb.classList.remove('drag-over');
+        var fromIndex = boardDrag.sourceIndex !== null ? boardDrag.sourceIndex : parseInt(e.dataTransfer.getData('text/plain'), 10);
+        var toIndex = i;
+        if (!isNaN(fromIndex) && fromIndex !== toIndex && fromIndex >= 0 && fromIndex < pinned.length) {
+          var item = pinned.splice(fromIndex, 1)[0];
+          pinned.splice(toIndex, 0, item);
+          savePinned();
+          renderBoard();
+          showToast('REORDERED PINNED ASSETS (#' + (fromIndex + 1) + ' \u2192 #' + (toIndex + 1) + ')');
+        }
+        boardDrag.sourceIndex = null;
+      });
+
+      thumb.addEventListener('dragend', function () {
+        thumb.classList.remove('is-dragging');
+        qsa('.board-thumb', thumbs).forEach(function (t) { t.classList.remove('drag-over', 'is-dragging'); });
+        boardDrag.sourceIndex = null;
+      });
+
+      // Touch drag and drop support
+      var touchMoved = false;
+      thumb.addEventListener('touchstart', function (e) {
+        if (e.target.closest('.board-thumb-remove')) return;
+        touchMoved = false;
+        boardDrag.sourceIndex = i;
+      }, { passive: true });
+
+      thumb.addEventListener('touchmove', function (e) {
+        if (boardDrag.sourceIndex === null) return;
+        touchMoved = true;
+        var touch = e.touches[0];
+        var targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+        var hoverThumb = targetEl ? targetEl.closest('.board-thumb') : null;
+        qsa('.board-thumb', thumbs).forEach(function (t) {
+          t.classList.toggle('drag-over', t === hoverThumb && t !== thumb);
+        });
+        if (hoverThumb && hoverThumb.dataset.index !== undefined) {
+          boardDrag.touchTargetIndex = parseInt(hoverThumb.dataset.index, 10);
+        } else {
+          boardDrag.touchTargetIndex = null;
+        }
+      }, { passive: true });
+
+      thumb.addEventListener('touchend', function () {
+        if (touchMoved && boardDrag.sourceIndex !== null && boardDrag.touchTargetIndex !== null && !isNaN(boardDrag.touchTargetIndex)) {
+          var fromIdx = boardDrag.sourceIndex;
+          var toIdx = boardDrag.touchTargetIndex;
+          if (fromIdx !== toIdx && fromIdx >= 0 && fromIdx < pinned.length && toIdx >= 0 && toIdx < pinned.length) {
+            var item = pinned.splice(fromIdx, 1)[0];
+            pinned.splice(toIdx, 0, item);
+            savePinned();
+            renderBoard();
+            showToast('REORDERED PINNED ASSETS (#' + (fromIdx + 1) + ' \u2192 #' + (toIdx + 1) + ')');
+          }
+        }
+        qsa('.board-thumb', thumbs).forEach(function (t) { t.classList.remove('drag-over', 'is-dragging'); });
+        boardDrag.sourceIndex = null;
+        boardDrag.touchTargetIndex = null;
+      });
+
       thumbs.appendChild(thumb);
     });
   }

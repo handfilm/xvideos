@@ -9,6 +9,14 @@ const HOST = '0.0.0.0';
 app.use(express.static(__dirname));
 
 // Route handlers for main views
+app.get('/album', (req, res) => {
+  res.sendFile(path.join(__dirname, 'album.html'));
+});
+
+app.get('/album.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'album.html'));
+});
+
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
