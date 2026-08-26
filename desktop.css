@@ -5,12 +5,16 @@
    per-window asset grid (reuses .asset-card etc. from style.css).
 ============================================================ */
 
-html, body { height: 100%; }
-body { overflow: hidden; }
+html, body {
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
 
 /* ---------------- Top bar ---------------- */
 .os-topbar{
-  position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 100;
+  position: sticky; top: 0; left: 0; right: 0; height: 56px; z-index: 1000;
   display: flex; align-items: center; gap: 18px;
   background: var(--panel); border-bottom: 1px solid var(--panel-line);
   padding: 0 16px;
@@ -34,6 +38,23 @@ body { overflow: hidden; }
 
 .os-topbar-tools{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .os-topbar-tools .win-chip-btn.active{ color: var(--red); border-color: var(--red); background: rgba(255,0,0,.08); }
+.global-mute-btn{
+  display: inline-flex; align-items: center; gap: 5px; font-weight: 600;
+  transition: all .2s ease;
+}
+.global-mute-btn.is-unmuted{
+  color: #fff; border-color: #00ff88; background: rgba(0, 255, 136, 0.15);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
+}
+.global-mute-btn.is-unmuted:hover{
+  border-color: #00ffaa; background: rgba(0, 255, 136, 0.25);
+}
+.global-mute-btn.is-muted{
+  color: var(--steel-dim); border-color: var(--panel-line);
+}
+.global-mute-btn.is-muted:hover{
+  color: var(--white); border-color: var(--red);
+}
 @media (max-width: 900px){ .os-topbar-tools{ display: none; } }
 
 /* Mobile settings gear + sheet — only surfaces where .os-topbar-tools hides */
@@ -68,7 +89,10 @@ body { overflow: hidden; }
 
 /* ---------------- Desktop surface ---------------- */
 .os-desktop{
-  position: fixed; top: 56px; left: 0; right: 0; bottom: 44px;
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 56px - 44px);
+  height: 92vh;
   overflow: auto;
   background:
     linear-gradient(var(--panel-line) 1px, transparent 1px) 0 0/40px 40px,

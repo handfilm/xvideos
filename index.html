@@ -3,94 +3,420 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAWX MOTION LAB — AI Character Consistency Experiment // HANDFILM</title>
-<meta name="description" content="Thousands of character-consistent AI motion clips for lingerie & activewear. A HANDFILM production.">
+<title>RAWX MOTION LAB — Massive Video Super Album & Desktop OS // HANDFILM</title>
+<meta name="description" content="Thousands of character-consistent AI motion clips for lingerie & activewear. Massive cinema video album and Desktop OS workstation. A HANDFILM production.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,900;1,700;1,900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;800;900&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="desktop.css">
 <link rel="stylesheet" href="super.css">
+<link rel="stylesheet" href="super-album.css">
 <link rel="stylesheet" href="chatbot.css">
 <link rel="stylesheet" href="content-studio.css">
 </head>
-<body>
+<body class="album-body">
 
 <div id="boot" class="boot">
   <div class="boot-line">RAWX MOTION LAB // HANDFILM</div>
-  <div class="boot-line boot-sub" id="boot-status">READING CATEGORY FOLDERS…</div>
+  <div class="boot-line boot-sub" id="boot-status">INITIALIZING SYSTEM…</div>
   <div class="boot-bar"><span id="boot-bar-fill"></span></div>
 </div>
 
-<!-- ================= TOP BAR (category tabs) ================= -->
-<header class="os-topbar">
-  <div class="os-logo">
-    <span class="os-logo-mark">RX</span>
-    <span class="os-logo-full">RAWX MOTION LAB</span>
-  </div>
-  <div class="panels-nav-wrap">
-    <button class="panels-nav-btn" id="panels-nav-btn">PANELS ▾</button>
-    <div class="panels-menu" id="panels-menu">
-      <a href="album.html" class="panels-item">SUPER ALBUM <span>Massive Slideshows & Layovers ↗</span></a>
-      <a href="index.html" class="panels-item panels-item-current">LAB <span>Desktop OS — you are here</span></a>
-      <a href="dashboard.html" class="panels-item">DEEPER <span>Infinite looping feed</span></a>
-      <a href="https://hub.handsandhead.com" class="panels-item">HUB <span>Central index of everything</span></a>
-      <a href="https://lingerie.handsandhead.com/index-b2b.html" class="panels-item">B2B LOOKBOOK <span>Wholesale lookbook ↗</span></a>
-      <a href="https://bloom-app.handsandhead.com" class="panels-item" target="_blank" rel="noopener">BLOOM <span>AI text generator ↗</span></a>
-      <a href="https://vault.handsandhead.com" class="panels-item" target="_blank" rel="noopener">VAULT <span>RAW asset & storage terminal ↗</span></a>
-      <a href="https://os.handsandhead.com" class="panels-item" target="_blank" rel="noopener">OS <span>Full Motion OS workstation ↗</span></a>
+<!-- Ambient Stage Canvas for audio reactive / cinema aura -->
+<canvas id="album-ambient-canvas" class="album-ambient-canvas"></canvas>
+
+<!-- ================= 1. TOP SECTION: SUPER VIDEO ALBUM ================= -->
+<div id="album-section" class="album-hero-section">
+  <!-- Top Fixed Command Bar for Super Album -->
+  <header class="album-topbar" id="album-topbar">
+    <div class="album-brand">
+      <a href="#album-section" class="album-brand-logo">
+        <span class="album-rx-badge">RX</span>
+        <div class="album-brand-text">
+          <span class="album-title-main">SUPER VIDEO ALBUM</span>
+          <span class="album-title-sub">MASSIVE CINEMA ARCHIVE // EDITION 2026</span>
+        </div>
+      </a>
     </div>
-  </div>
-  <nav class="cat-tabs" id="cat-tabs"><!-- category tab buttons injected here --></nav>
-  <div class="os-topbar-tools">
-    <a href="album.html" class="win-chip-btn" style="color: #fff; background: rgba(255,0,0,0.22); border-color: #ff0000; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Massive Super Video Album with Slideshows & Layovers">✦ SUPER ALBUM</a>
-    <select class="topbar-select res-select" id="res-select" title="Stream resolution">
-      <option value="auto">AUTO</option>
-      <option value="4k">4K</option>
-      <option value="1080p">1080P</option>
-      <option value="720p">720P</option>
-    </select>
-    <select class="topbar-select theme-select" id="theme-select" title="Accent theme">
-      <option value="brutalist-red">BRUTALIST RED</option>
-      <option value="cyberpunk-green">CYBERPUNK GREEN</option>
-      <option value="electric-blue">ELECTRIC BLUE</option>
-    </select>
-    <button class="win-chip-btn sync-loops-btn" title="Time-align every playing loop">&#8635; SYNC</button>
-    <button class="win-chip-btn spotlight-btn" title="Dim all cards except the one you're hovering">&#9673; SPOTLIGHT</button>
-  </div>
-  <div class="os-topbar-stats">
-    <span class="status-dot" id="status-dot"></span>
-    <span id="status-text">SYNCING</span>
-    <b id="stat-total">—</b>
-  </div>
-</header>
 
-<!-- ================= DESKTOP (floating windows live here) ================= -->
-<main class="os-desktop" id="desktop">
-  <div class="desktop-brand" aria-hidden="true">
-    <span class="db-raw">RAW<span class="db-x">X</span></span>
-    <span class="db-deeper">— DEEPER —</span>
-  </div>
-</main>
+    <div class="panels-nav-wrap">
+      <button class="panels-nav-btn" id="album-panels-nav-btn">PANELS ▾</button>
+      <div class="panels-menu" id="album-panels-menu">
+        <a href="#album-section" class="panels-item panels-item-current">SUPER ALBUM <span>Massive Slideshows & Layovers — at top</span></a>
+        <a href="#desktop-section" class="panels-item">LAB <span>Desktop OS Workstation — scroll down 🠗</span></a>
+        <a href="dashboard.html" class="panels-item">DEEPER <span>Infinite Looping Feed</span></a>
+        <a href="https://hub.handsandhead.com" class="panels-item">HUB <span>Central Index</span></a>
+        <a href="https://lingerie.handsandhead.com/index-b2b.html" class="panels-item">B2B LOOKBOOK <span>Wholesale Lookbook ↗</span></a>
+        <a href="https://bloom-app.handsandhead.com" class="panels-item" target="_blank" rel="noopener">BLOOM <span>AI Text Generator ↗</span></a>
+        <a href="https://vault.handsandhead.com" class="panels-item" target="_blank" rel="noopener">VAULT <span>Asset Terminal ↗</span></a>
+        <a href="https://os.handsandhead.com" class="panels-item" target="_blank" rel="noopener">OS <span>Motion OS ↗</span></a>
+      </div>
+    </div>
 
-<!-- ================= TASKBAR ================= -->
-<footer class="os-taskbar">
-  <div class="taskbar-launcher-wrap">
-    <button class="taskbar-launcher-btn" id="launcher-btn">+ NEW WINDOW</button>
-    <div class="launcher-menu" id="launcher-menu"></div>
-  </div>
-  <div class="taskbar-windows" id="taskbar-windows"></div>
-  <div class="taskbar-right">
-    <button class="taskbar-settings-btn" id="mobile-settings-btn" title="Resolution, theme &amp; view settings">&#9881;</button>
-    <button class="taskbar-board-btn" id="taskbar-board-btn">
-      BOARD <span id="taskbar-board-count">0</span>
-    </button>
-    <span class="taskbar-pinned-stat">PINNED <b id="stat-pinned">0</b></span>
-  </div>
-</footer>
+    <!-- Mode Selector Pills -->
+    <div class="album-view-modes" id="album-view-modes">
+      <button class="album-mode-btn active" data-mode="cinema" title="Full immersion editorial cinema slideshow">
+        <span class="mode-icon">✦</span> CINEMA SLIDESHOW
+      </button>
+      <button class="album-mode-btn" data-mode="wall" title="Massive 3D wall & infinite motion reel">
+        <span class="mode-icon">▦</span> MEGA WALL
+      </button>
+      <button class="album-mode-btn" data-mode="split" title="Multi-camera 4-angle sync comparison deck">
+        <span class="mode-icon">⚏</span> MULTI-CAM SPLIT
+      </button>
+      <button class="album-mode-btn" data-mode="curated" title="Browse by high-fashion motion lookbooks">
+        <span class="mode-icon">❖</span> LOOKBOOK REELS
+      </button>
+    </div>
 
-<!-- Mobile settings sheet — the topbar resolution/theme/sync/spotlight
-     controls duplicated here since .os-topbar-tools hides below 900px. -->
+    <!-- Right Command Actions -->
+    <div class="album-topbar-actions">
+      <button class="album-action-btn" id="btn-slideshow-toggle" title="Play / Pause Slideshow">
+        <span class="action-icon" id="slideshow-icon">❚❚</span> <span id="slideshow-text">AUTO 6s</span>
+      </button>
+      <button class="album-action-btn" id="btn-sound-toggle" title="Audio / Visualizer Drone Synth">
+        <span class="action-icon">♫</span> SOUND
+      </button>
+      <button class="album-action-btn" id="btn-text-toggle" title="Toggle Typographic Text Layover Stems">
+        <span class="action-icon">☷</span> LAYOVER <b class="indicator-on">ON</b>
+      </button>
+      <button class="album-action-btn" id="btn-fullscreen" title="Full Immersion Fullscreen">
+        <span class="action-icon">⛶</span> FULL
+      </button>
+      <select class="album-select theme-select" id="album-theme-select" title="Color Theme">
+        <option value="brutalist-red">BRUTALIST RED</option>
+        <option value="cyberpunk-green">CYBERPUNK GREEN</option>
+        <option value="electric-blue">ELECTRIC BLUE</option>
+      </select>
+      <a href="#desktop-section" class="album-action-btn" style="background: var(--red); color: #000; font-weight: 700;" title="Scroll down to Main Index & Desktop OS">
+        MAIN INDEX 🠗
+      </a>
+    </div>
+  </header>
+
+  <!-- ================= MAIN EXPERIENCE CONTAINER ================= -->
+  <main class="album-main" id="album-main">
+
+    <!-- ================= VIEW 1: CINEMA SLIDESHOW ================= -->
+    <section class="album-view album-view-cinema active" id="view-cinema">
+      
+      <!-- Mega Background Stage Video Container -->
+      <div class="cinema-stage" id="cinema-stage">
+        <div class="cinema-stage-layers" id="cinema-stage-layers">
+          <!-- Slides are rendered here with active & next crossfading -->
+        </div>
+        
+        <!-- Vignette and Editorial Texture Gradients -->
+        <div class="cinema-grain"></div>
+        <div class="cinema-vignette"></div>
+
+        <!-- ================= MASSIVE TEXT LAYOVERS (Editorial Stems) ================= -->
+        <div class="cinema-layover-container" id="cinema-layover">
+          <div class="layover-meta-top">
+            <div class="layover-chip">
+              <span class="pulse-dot"></span>
+              <span id="layover-cat">SIGNATURE // ACTIVE MOTION</span>
+            </div>
+            <div class="layover-timecode" id="layover-timecode">REC 00:04:12:18 // 60FPS 4K</div>
+            <div class="layover-badge" id="layover-badge">CHAR-CONSISTENT AI</div>
+          </div>
+
+          <div class="layover-hero-text">
+            <h1 class="layover-massive-title" id="layover-title">HYPER-KINETIC FLOW</h1>
+            <p class="layover-massive-tagline" id="layover-tagline">AN EXPLORATION OF SEAMLESS FABRIC DYNAMICS, TENSION, &amp; ANATOMICAL MOTION IN ULTRA DEFINITION.</p>
+          </div>
+
+          <div class="layover-meta-bottom">
+            <div class="layover-specs-grid">
+              <div class="spec-cell"><label>ASSET ID</label><span id="spec-id">RAWX-0824-SIG</span></div>
+              <div class="spec-cell"><label>MOTION TYPE</label><span id="spec-motion">360° ORBITAL ROTATION</span></div>
+              <div class="spec-cell"><label>FABRIC PROFILE</label><span id="spec-fabric">HIGH-STRETCH COMPRESSION</span></div>
+              <div class="spec-cell"><label>ASPECT RATIO</label><span id="spec-aspect">9:16 VERTICAL CINEMA</span></div>
+            </div>
+
+            <div class="layover-playback-cluster">
+              <!-- Studio Timeline Scrubber -->
+              <div class="studio-scrubber-wrap" id="studio-scrubber-wrap" title="Drag or click to seek frame">
+                <div class="studio-scrubber-track" id="studio-scrubber-track">
+                  <div class="studio-buffer-bar" id="studio-buffer-bar"></div>
+                  <div class="studio-played-bar" id="studio-played-bar"></div>
+                  <div class="studio-scrubber-handle" id="studio-scrubber-handle"></div>
+                  <div class="studio-hover-time" id="studio-hover-time">00:00.00</div>
+                </div>
+              </div>
+
+              <!-- Pro Player Action Controls -->
+              <div class="studio-controls-deck">
+                <div class="studio-deck-left">
+                  <button class="studio-icon-btn" id="studio-prev-btn" title="Previous Asset (Arrow Left)">⏮</button>
+                  <button class="studio-icon-btn studio-step-btn" id="studio-step-back-btn" title="Step Back 1 Frame (,)">|◀</button>
+                  <button class="studio-icon-btn studio-play-btn" id="studio-play-btn" title="Play / Pause (Space / K)">❚❚</button>
+                  <button class="studio-icon-btn studio-step-btn" id="studio-step-fwd-btn" title="Step Forward 1 Frame (.)">▶|</button>
+                  <button class="studio-icon-btn" id="studio-next-btn" title="Next Asset (Arrow Right)">⏭</button>
+
+                  <div class="studio-time-readout">
+                    <span id="studio-time-cur">00:00.00</span>
+                    <span class="studio-time-sep">/</span>
+                    <span id="studio-time-dur">00:00.00</span>
+                    <span class="studio-frame-badge" id="studio-frame-badge">F: 000</span>
+                  </div>
+                </div>
+
+                <div class="studio-deck-right">
+                  <!-- Playback Mode -->
+                  <button class="studio-mode-pill active" id="studio-loop-mode-btn" title="Toggle Playback Behavior">
+                    <span id="studio-loop-icon">↻</span> <span id="studio-loop-label">AUTO 6s</span>
+                  </button>
+
+                  <!-- Speed Switcher -->
+                  <select class="studio-select" id="studio-speed-select" title="Playback Speed">
+                    <option value="0.25">0.25×</option>
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1.0×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="2">2.0×</option>
+                  </select>
+
+                  <!-- Aspect Fit Toggle -->
+                  <button class="studio-icon-btn" id="studio-fit-btn" title="Toggle Aspect Fit (Cover / Contain - Key: C)">⛶ FIT</button>
+
+                  <!-- Audio Volume & Mute -->
+                  <div class="studio-vol-group">
+                    <button class="studio-icon-btn" id="studio-mute-btn" title="Mute / Unmute (Key: M)">🔇</button>
+                    <input type="range" class="studio-vol-slider" id="studio-vol-slider" min="0" max="1" step="0.05" value="0" title="Master Audio Volume">
+                  </div>
+
+                  <!-- PiP -->
+                  <button class="studio-icon-btn" id="studio-pip-btn" title="Picture in Picture (Key: P)">🗔</button>
+
+                  <!-- Diagnostics HUD Toggle -->
+                  <button class="studio-icon-btn" id="studio-stats-btn" title="Toggle Stream Diagnostics HUD">HUD</button>
+                </div>
+              </div>
+
+              <!-- Slideshow countdown tracker -->
+              <div class="layover-progress-wrap">
+                <div class="layover-progress-bar"><span id="layover-progress-fill"></span></div>
+                <div class="layover-progress-nums">
+                  <span id="layover-curr-slide">01</span> / <span id="layover-total-slides">24</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Studio Diagnostics / Stats for Nerds HUD -->
+        <div class="studio-stats-hud" id="studio-stats-hud">
+          <div class="hud-header">
+            <span>STREAM DIAGNOSTICS &amp; TELEMETRY</span>
+            <button class="hud-close" id="hud-close-btn">✕</button>
+          </div>
+          <div class="hud-body">
+            <div class="hud-row"><label>STREAM SOURCE:</label><span id="hud-source">Cloudflare R2 CDN</span></div>
+            <div class="hud-row"><label>CDN URL:</label><span class="hud-url" id="hud-url">--</span></div>
+            <div class="hud-row"><label>VIDEO RES / ASPECT:</label><span id="hud-res">1080 × 1920 (9:16)</span></div>
+            <div class="hud-row"><label>STATUS &amp; BUFFER:</label><span id="hud-buffer">Ready (100% Loaded)</span></div>
+            <div class="hud-row"><label>PLAYBACK RATE / FPS:</label><span id="hud-fps">1.0× @ 60 FPS</span></div>
+            <div class="hud-row"><label>HARDWARE ACCEL:</label><span id="hud-gpu">GPU Direct Stream (WebGL &amp; NVDEC)</span></div>
+          </div>
+        </div>
+
+        <!-- Slide Navigation Thumb Filmstrip -->
+        <div class="cinema-filmstrip-drawer" id="cinema-filmstrip-drawer">
+          <div class="filmstrip-header">
+            <span>ALBUM FILMSTRIP REEL (<span id="filmstrip-count">0</span> ASSETS)</span>
+            <button class="filmstrip-toggle-btn" id="filmstrip-toggle-btn">HIDE REEL ▾</button>
+          </div>
+          <div class="filmstrip-track" id="filmstrip-track">
+            <!-- Filmstrip thumbnails injected here -->
+          </div>
+        </div>
+
+        <!-- Scroll down affordance indicator -->
+        <a href="#desktop-section" class="album-scroll-indicator" id="album-scroll-indicator" title="Scroll down to browse Desktop OS & Full Catalog">
+          <span class="album-scroll-label">SCROLL FOR MAIN INDEX // LAB WORKSTATION</span>
+          <span class="album-scroll-arrow">▼</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 2: MEGA 3D WALL ================= -->
+    <section class="album-view album-view-wall" id="view-wall">
+      <div class="wall-header-bar">
+        <div class="wall-title-block">
+          <h2>MASSIVE MOTION GRID &amp; ARCHIVE REEL</h2>
+          <p>Interactive masonry feed of the entire motion catalog. Click any tile to launch instant cinema immersion or pin to lookbook.</p>
+        </div>
+        <div class="wall-filter-bar">
+          <input type="text" class="wall-search-input" id="wall-search-input" placeholder="SEARCH ASSETS / FABRIC / MOVEMENT…">
+          <select class="album-select" id="wall-cat-select">
+            <option value="">ALL COLLECTIONS</option>
+          </select>
+          <select class="album-select" id="wall-sort-select">
+            <option value="curated">CURATED ORDER</option>
+            <option value="latest">LATEST ADDITIONS</option>
+            <option value="shuffle">RANDOM SHUFFLE</option>
+          </select>
+          <div class="wall-density-btns">
+            <button class="wall-dense-btn" data-cols="3">3 COL</button>
+            <button class="wall-dense-btn active" data-cols="4">4 COL</button>
+            <button class="wall-dense-btn" data-cols="6">6 COL</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="wall-grid" id="wall-grid">
+        <!-- Mega video cards injected here -->
+      </div>
+    </section>
+
+    <!-- ================= VIEW 3: MULTI-CAM SPLIT SCREEN ================= -->
+    <section class="album-view album-view-split" id="view-split">
+      <div class="split-header-bar">
+        <div class="split-info">
+          <h2>4-WAY MULTI-CAMERA SYNCHRONIZED COMPARISON DECK</h2>
+          <p>Compare character angles, dynamic lighting setups, and motion flow locked to a universal clock.</p>
+        </div>
+        <div class="split-controls">
+          <button class="album-action-btn" id="btn-split-sync">⟳ RE-SYNC PLAYHEADS</button>
+          <button class="album-action-btn" id="btn-split-cycle">⚡ CYCLE PRESETS</button>
+        </div>
+      </div>
+
+      <div class="split-quad-grid" id="split-quad-grid">
+        <div class="split-quad-cell" id="quad-1" data-slot="0">
+          <div class="quad-meta">CAM 01 // FRONT ELEVATION <span class="quad-tag">PRIMARY</span></div>
+          <div class="quad-video-wrap"></div>
+          <div class="quad-overlay"><h3>FRONTAL CADENCE</h3></div>
+        </div>
+        <div class="split-quad-cell" id="quad-2" data-slot="1">
+          <div class="quad-meta">CAM 02 // 45° OBLIQUE VIEW <span class="quad-tag">PROFILE</span></div>
+          <div class="quad-video-wrap"></div>
+          <div class="quad-overlay"><h3>OBLIQUE DYNAMICS</h3></div>
+        </div>
+        <div class="split-quad-cell" id="quad-3" data-slot="2">
+          <div class="quad-meta">CAM 03 // POSTERIOR / BACK STUDY <span class="quad-tag">TENSION</span></div>
+          <div class="quad-video-wrap"></div>
+          <div class="quad-overlay"><h3>POSTERIOR LATERAL</h3></div>
+        </div>
+        <div class="split-quad-cell" id="quad-4" data-slot="3">
+          <div class="quad-meta">CAM 04 // MACRO FABRIC FOCUS <span class="quad-tag">TEXTURE</span></div>
+          <div class="quad-video-wrap"></div>
+          <div class="quad-overlay"><h3>MICRO TEXTURE</h3></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 4: CURATED LOOKBOOK REELS ================= -->
+    <section class="album-view album-view-curated" id="view-curated">
+      <div class="lookbook-hero-banner">
+        <h2>EDITORIAL LOOKBOOK REELS</h2>
+        <p>High-concept motion series curated by lighting, posture, and kinetic silhouette.</p>
+      </div>
+      <div class="lookbook-collections" id="lookbook-collections">
+        <!-- Curated collections accordion/carousels injected here -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating Visualizer Bar at bottom when sound is on -->
+  <div class="album-visualizer-bar" id="album-visualizer-bar">
+    <div class="visualizer-bars">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="visualizer-info">RAWX AMBIENT FREQUENCY DRONE // 432HZ SYNTH</div>
+  </div>
+
+  <!-- Quick Keyboard Shortcuts Modal Hint -->
+  <div class="album-keys-hint" id="album-keys-hint">
+    <span><kbd>SPACE</kbd> Play/Pause</span>
+    <span><kbd>←</kbd><kbd>→</kbd> Prev/Next</span>
+    <span><kbd>T</kbd> Toggle Text</span>
+    <span><kbd>F</kbd> Fullscreen</span>
+    <span><kbd>M</kbd> Modes</span>
+    <span><kbd>S</kbd> Sound</span>
+  </div>
+</div>
+
+<!-- ================= 2. MAIN INDEX & DESKTOP OS (Scroll Down View) ================= -->
+<div id="desktop-section" class="desktop-main-section">
+
+  <!-- ================= OS TOP BAR (category tabs & global tools) ================= -->
+  <header class="os-topbar" id="os-topbar">
+    <div class="os-logo">
+      <span class="os-logo-mark">RX</span>
+      <span class="os-logo-full">MAIN INDEX // MOTION LAB</span>
+    </div>
+    <div class="panels-nav-wrap">
+      <button class="panels-nav-btn" id="panels-nav-btn">PANELS ▾</button>
+      <div class="panels-menu" id="panels-menu">
+        <a href="#album-section" class="panels-item">SUPER ALBUM <span>Massive Slideshows & Layovers — scroll up 🠕</span></a>
+        <a href="#desktop-section" class="panels-item panels-item-current">LAB <span>Desktop OS Workstation — you are here</span></a>
+        <a href="dashboard.html" class="panels-item">DEEPER <span>Infinite looping feed</span></a>
+        <a href="https://hub.handsandhead.com" class="panels-item">HUB <span>Central index of everything</span></a>
+        <a href="https://lingerie.handsandhead.com/index-b2b.html" class="panels-item">B2B LOOKBOOK <span>Wholesale lookbook ↗</span></a>
+        <a href="https://bloom-app.handsandhead.com" class="panels-item" target="_blank" rel="noopener">BLOOM <span>AI text generator ↗</span></a>
+        <a href="https://vault.handsandhead.com" class="panels-item" target="_blank" rel="noopener">VAULT <span>RAW asset & storage terminal ↗</span></a>
+        <a href="https://os.handsandhead.com" class="panels-item" target="_blank" rel="noopener">OS <span>Full Motion OS workstation ↗</span></a>
+      </div>
+    </div>
+    <nav class="cat-tabs" id="cat-tabs"><!-- category tab buttons injected here --></nav>
+    <div class="os-topbar-tools">
+      <a href="#album-section" class="win-chip-btn" style="color: #fff; background: rgba(255,0,0,0.22); border-color: #ff0000; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Scroll up to Massive Super Video Album">✦ SUPER ALBUM 🠕</a>
+      <select class="topbar-select res-select" id="res-select" title="Stream resolution">
+        <option value="auto">AUTO</option>
+        <option value="4k">4K</option>
+        <option value="1080p">1080P</option>
+        <option value="720p">720P</option>
+      </select>
+      <select class="topbar-select theme-select" id="theme-select" title="Accent theme">
+        <option value="brutalist-red">BRUTALIST RED</option>
+        <option value="cyberpunk-green">CYBERPUNK GREEN</option>
+        <option value="electric-blue">ELECTRIC BLUE</option>
+      </select>
+      <button class="win-chip-btn sync-loops-btn" title="Time-align every playing loop">&#8635; SYNC</button>
+      <button class="win-chip-btn spotlight-btn" title="Dim all cards except the one you're hovering">&#9673; SPOTLIGHT</button>
+      <button class="win-chip-btn global-mute-btn" id="global-mute-btn" title="Toggle audio for all open desktop video windows (M)">&#128263; UNMUTE ALL</button>
+    </div>
+    <div class="os-topbar-stats">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">SYNCING</span>
+      <b id="stat-total">—</b>
+    </div>
+  </header>
+
+  <!-- ================= DESKTOP (floating windows live here) ================= -->
+  <main class="os-desktop" id="desktop">
+    <div class="desktop-brand" aria-hidden="true">
+      <span class="db-raw">RAW<span class="db-x">X</span></span>
+      <span class="db-deeper">— MAIN INDEX —</span>
+    </div>
+  </main>
+
+  <!-- ================= TASKBAR ================= -->
+  <footer class="os-taskbar">
+    <div class="taskbar-launcher-wrap">
+      <button class="taskbar-launcher-btn" id="launcher-btn">+ NEW WINDOW</button>
+      <div class="launcher-menu" id="launcher-menu"></div>
+    </div>
+    <div class="taskbar-windows" id="taskbar-windows"></div>
+    <div class="taskbar-right">
+      <button class="taskbar-settings-btn" id="mobile-settings-btn" title="Resolution, theme &amp; view settings">&#9881;</button>
+      <button class="taskbar-board-btn" id="taskbar-board-btn">
+        BOARD <span id="taskbar-board-count">0</span>
+      </button>
+      <span class="taskbar-pinned-stat">PINNED <b id="stat-pinned">0</b></span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Mobile settings sheet -->
 <div class="mobile-settings-sheet" id="mobile-settings-sheet">
   <div class="mss-row">
     <label>RESOLUTION</label>
@@ -114,6 +440,7 @@
     <button class="win-chip-btn spotlight-btn">&#9673; SPOTLIGHT HOVER</button>
   </div>
   <div class="mss-row mss-row-buttons">
+    <button class="win-chip-btn global-mute-btn" id="mobile-global-mute-btn">&#128263; UNMUTE ALL</button>
     <button class="win-chip-btn" id="mobile-presentation-btn">&#9633; PRESENTATION MODE</button>
   </div>
 </div>
@@ -143,7 +470,7 @@
     <div class="lb-media" id="lb-media"></div>
     <button class="lb-nav lb-next" id="lb-next" title="Next (N)">›</button>
 
-    <!-- A/B loop range — sets a custom in/out point for long-form clips -->
+    <!-- A/B loop range -->
     <div class="lb-ab-range" id="lb-ab-range" hidden>
       <span class="lb-ab-label">A</span>
       <input type="range" id="lb-ab-a" min="0" max="100" value="0" step="0.5">
@@ -151,8 +478,7 @@
       <span class="lb-ab-label">B</span>
     </div>
 
-    <!-- Tap-only command dock — mobile: every desktop keyboard shortcut
-         (zoom, nav, fullscreen) gets a real tappable button here. -->
+    <!-- Tap-only command dock -->
     <div class="lb-mobile-dock" id="lb-mobile-dock">
       <button class="lb-dock-btn" id="lb-dock-prev" title="Previous">‹</button>
       <button class="lb-dock-btn" id="lb-dock-zoomout" title="Zoom out">−</button>
@@ -216,6 +542,8 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Application Scripts -->
+<script src="super-album.js"></script>
 <script src="app.js"></script>
 <script src="super.js"></script>
 <script type="module" src="firebase.js"></script>

@@ -227,6 +227,7 @@
     }
     cmds.push({ label: 'TOGGLE CRT / SCANLINE FX', tag: 'system', run: toggleCrt });
     cmds.push({ label: 'TOGGLE AMBIENT SOUNDSCAPE', tag: 'system', run: toggleSoundscape });
+    if (qs('.global-mute-btn')) cmds.push({ label: 'TOGGLE GLOBAL VIDEO MUTE / AUDIO', tag: 'playback', run: function () { qs('.global-mute-btn').click(); } });
     if (qs('.spotlight-btn')) cmds.push({ label: 'TOGGLE SPOTLIGHT HOVER', tag: 'system', run: function () { qs('.spotlight-btn').click(); } });
     if (qs('.sync-loops-btn')) cmds.push({ label: 'SYNC ALL LOOPS', tag: 'system', run: function () { qs('.sync-loops-btn').click(); } });
     if (isDesktopOS) cmds.push({ label: 'TOGGLE PRESENTATION MODE', tag: 'system', run: function () { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'P', shiftKey: true })); } });

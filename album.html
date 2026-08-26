@@ -123,18 +123,89 @@
           </div>
 
           <div class="layover-playback-cluster">
+            <!-- Studio Timeline Scrubber -->
+            <div class="studio-scrubber-wrap" id="studio-scrubber-wrap" title="Drag or click to seek frame">
+              <div class="studio-scrubber-track" id="studio-scrubber-track">
+                <div class="studio-buffer-bar" id="studio-buffer-bar"></div>
+                <div class="studio-played-bar" id="studio-played-bar"></div>
+                <div class="studio-scrubber-handle" id="studio-scrubber-handle"></div>
+                <div class="studio-hover-time" id="studio-hover-time">00:00.00</div>
+              </div>
+            </div>
+
+            <!-- Pro Player Action Controls -->
+            <div class="studio-controls-deck">
+              <div class="studio-deck-left">
+                <button class="studio-icon-btn" id="studio-prev-btn" title="Previous Asset (Arrow Left)">⏮</button>
+                <button class="studio-icon-btn studio-step-btn" id="studio-step-back-btn" title="Step Back 1 Frame (,)">|◀</button>
+                <button class="studio-icon-btn studio-play-btn" id="studio-play-btn" title="Play / Pause (Space / K)">❚❚</button>
+                <button class="studio-icon-btn studio-step-btn" id="studio-step-fwd-btn" title="Step Forward 1 Frame (.)">▶|</button>
+                <button class="studio-icon-btn" id="studio-next-btn" title="Next Asset (Arrow Right)">⏭</button>
+
+                <div class="studio-time-readout">
+                  <span id="studio-time-cur">00:00.00</span>
+                  <span class="studio-time-sep">/</span>
+                  <span id="studio-time-dur">00:00.00</span>
+                  <span class="studio-frame-badge" id="studio-frame-badge">F: 000</span>
+                </div>
+              </div>
+
+              <div class="studio-deck-right">
+                <!-- Playback Mode -->
+                <button class="studio-mode-pill active" id="studio-loop-mode-btn" title="Toggle Playback Behavior">
+                  <span id="studio-loop-icon">↻</span> <span id="studio-loop-label">AUTO 6s</span>
+                </button>
+
+                <!-- Speed Switcher -->
+                <select class="studio-select" id="studio-speed-select" title="Playback Speed">
+                  <option value="0.25">0.25×</option>
+                  <option value="0.5">0.5×</option>
+                  <option value="1" selected>1.0×</option>
+                  <option value="1.5">1.5×</option>
+                  <option value="2">2.0×</option>
+                </select>
+
+                <!-- Aspect Fit Toggle -->
+                <button class="studio-icon-btn" id="studio-fit-btn" title="Toggle Aspect Fit (Cover / Contain - Key: C)">⛶ FIT</button>
+
+                <!-- Audio Volume & Mute -->
+                <div class="studio-vol-group">
+                  <button class="studio-icon-btn" id="studio-mute-btn" title="Mute / Unmute (Key: M)">🔇</button>
+                  <input type="range" class="studio-vol-slider" id="studio-vol-slider" min="0" max="1" step="0.05" value="0" title="Master Audio Volume">
+                </div>
+
+                <!-- PiP -->
+                <button class="studio-icon-btn" id="studio-pip-btn" title="Picture in Picture (Key: P)">🗔</button>
+
+                <!-- Diagnostics HUD Toggle -->
+                <button class="studio-icon-btn" id="studio-stats-btn" title="Toggle Stream Diagnostics HUD">HUD</button>
+              </div>
+            </div>
+
+            <!-- Slideshow countdown tracker -->
             <div class="layover-progress-wrap">
               <div class="layover-progress-bar"><span id="layover-progress-fill"></span></div>
               <div class="layover-progress-nums">
                 <span id="layover-curr-slide">01</span> / <span id="layover-total-slides">24</span>
               </div>
             </div>
-            <div class="layover-quick-ctrls">
-              <button class="layover-ctrl-btn" id="btn-prev-slide" title="Previous Slide (Arrow Left)">← PREV</button>
-              <button class="layover-ctrl-btn layover-play-btn" id="btn-pause-slide" title="Pause / Play (Space)">PAUSE</button>
-              <button class="layover-ctrl-btn" id="btn-next-slide" title="Next Slide (Arrow Right)">NEXT →</button>
-            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Studio Diagnostics / Stats for Nerds HUD -->
+      <div class="studio-stats-hud" id="studio-stats-hud">
+        <div class="hud-header">
+          <span>STREAM DIAGNOSTICS &amp; TELEMETRY</span>
+          <button class="hud-close" id="hud-close-btn">✕</button>
+        </div>
+        <div class="hud-body">
+          <div class="hud-row"><label>STREAM SOURCE:</label><span id="hud-source">Cloudflare R2 CDN</span></div>
+          <div class="hud-row"><label>CDN URL:</label><span class="hud-url" id="hud-url">--</span></div>
+          <div class="hud-row"><label>VIDEO RES / ASPECT:</label><span id="hud-res">1080 × 1920 (9:16)</span></div>
+          <div class="hud-row"><label>STATUS &amp; BUFFER:</label><span id="hud-buffer">Ready (100% Loaded)</span></div>
+          <div class="hud-row"><label>PLAYBACK RATE / FPS:</label><span id="hud-fps">1.0× @ 60 FPS</span></div>
+          <div class="hud-row"><label>HARDWARE ACCEL:</label><span id="hud-gpu">GPU Direct Stream (WebGL &amp; NVDEC)</span></div>
         </div>
       </div>
 

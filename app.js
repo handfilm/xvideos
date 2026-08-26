@@ -87,23 +87,62 @@
   }
 
   /* ================================================================
-     SUPER-APP STATE — resolution, theme, spotlight, sync, presentation.
+     SUPER-APP STATE — resolution, theme, spotlight, sync, presentation, mute.
      Kept in one place so every subsystem below can read/write it.
   ================================================================ */
   var Super = {
     resolution: loadPref('rawx_resolution', 'auto'),
     theme: loadPref('rawx_theme', 'brutalist-red'),
     spotlight: false,
-    presentation: false
+    presentation: false,
+    isMuted: loadPref('rawx_global_mute', 'true') === 'true'
   };
-  // Every video currently in the DOM across grids, lightbox, compare window
+  // Every video currently in the DOM across windows, grids, lightbox, compare window
   // and the PiP widget — queried live (never cached) so it's always correct.
-  function allLiveVideos() { return qsa('.win-grid video, #lb-video, .compare-video, #pip-video'); }
+  function allLiveVideos() { return qsa('.win-grid video, #lb-video, .compare-video, #pip-video, .desktop-hero-grid video, #desktop video, .win video'); }
   function loadPref(key, fallback) {
     try { return localStorage.getItem(key) || fallback; } catch (e) { return fallback; }
   }
   function savePref(key, val) {
     try { localStorage.setItem(key, val); } catch (e) {}
+  }
+
+  function updateGlobalMuteUI() {
+    qsa('.global-mute-btn').forEach(function (btn) {
+      if (Super.isMuted) {
+        btn.classList.remove('is-unmuted');
+        btn.classList.add('is-muted');
+        btn.innerHTML = '&#128263; UNMUTE ALL';
+        btn.title = 'Unmute all open desktop video windows (M)';
+        btn.setAttribute('aria-label', 'Unmute all open desktop videos');
+      } else {
+        btn.classList.add('is-unmuted');
+        btn.classList.remove('is-muted');
+        btn.innerHTML = '&#128266; MUTE ALL';
+        btn.title = 'Mute all open desktop video windows (M)';
+        btn.setAttribute('aria-label', 'Mute all open desktop videos');
+      }
+    });
+  }
+
+  function setGlobalMute(mute, silent) {
+    Super.isMuted = !!mute;
+    savePref('rawx_global_mute', Super.isMuted ? 'true' : 'false');
+    updateGlobalMuteUI();
+    var vids = allLiveVideos();
+    vids.forEach(function (v) {
+      v.muted = Super.isMuted;
+      if (!Super.isMuted && !v.paused) {
+        v.play().catch(function () {});
+      }
+    });
+    if (!silent) {
+      showToast(Super.isMuted ? 'ALL DESKTOP VIDEOS MUTED (SILENT)' : 'ALL DESKTOP VIDEOS UNMUTED (AUDIO ACTIVE)');
+    }
+  }
+
+  function toggleGlobalMute() {
+    setGlobalMute(!Super.isMuted);
   }
 
   // Rewrites a stream URL to request a specific resolution variant by
@@ -708,6 +747,7 @@
       var v = qs('video', card);
       var durEl = qs('.asset-card-duration', card);
       var bar = qs('.asset-card-progress span', card);
+      v.muted = Super.isMuted;
       v.playbackRate = w.speed || 1;
       bindVideoFallback(v); // R2 miss (still migrating) -> retry once from Drive
       v.addEventListener('loadedmetadata', function () {
@@ -794,6 +834,7 @@
           if (entry.isIntersecting) {
             if (v.dataset.unloaded) {
               v.src = applyResolution(v.getAttribute('data-base-src'), Super.resolution);
+              v.muted = Super.isMuted;
               v.load();
               delete v.dataset.unloaded;
             }
@@ -897,8 +938,12 @@
           cache.items.slice(0, 8).forEach(function (item) {
             var tile = el('div', 'hero-tile');
             tile.innerHTML = item.isVideo
-              ? '<video src="' + applyResolution(item.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(item.streamSrc || '') + '" poster="' + item.poster + '" muted loop playsinline preload="none"></video>'
+              ? '<video src="' + applyResolution(item.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(item.streamSrc || '') + '" poster="' + item.poster + '" ' + (Super.isMuted ? 'muted ' : '') + 'loop playsinline preload="none"></video>'
               : '<img src="' + item.src + '" alt="" loading="lazy">';
+            if (item.isVideo) {
+              var hv = qs('video', tile);
+              if (hv) hv.muted = Super.isMuted;
+            }
             tile.addEventListener('mouseenter', function () {
               tile.classList.add('hero-hover');
               var v = qs('video', tile); if (v) v.play().catch(function () {});
@@ -1014,17 +1059,22 @@
     var bInput = document.getElementById('lb-ab-b');
     aInput.value = 0; bInput.value = 100;
     function enforce() {
-      if (!video.duration || !isFinite(video.duration)) return;
+      if (!video.duration || !isFinite(video.duration) || isNaN(video.duration) || video.duration <= 0) return;
       var startT = (loopRange.a / 100) * video.duration;
       var endT = (loopRange.b / 100) * video.duration;
-      if (video.currentTime < startT) video.currentTime = startT;
-      if (video.currentTime >= endT) video.currentTime = startT;
+      if (isFinite(startT) && isFinite(endT)) {
+        if (video.currentTime < startT) video.currentTime = startT;
+        if (video.currentTime >= endT) video.currentTime = startT;
+      }
     }
     video.addEventListener('timeupdate', enforce);
     aInput.oninput = function () {
       loopRange.a = Math.min(parseInt(aInput.value, 10), parseInt(bInput.value, 10) - 1);
       aInput.value = loopRange.a;
-      if (video.duration) video.currentTime = (loopRange.a / 100) * video.duration;
+      if (video.duration && isFinite(video.duration) && !isNaN(video.duration) && video.duration > 0) {
+        var targetA = (loopRange.a / 100) * video.duration;
+        if (isFinite(targetA)) video.currentTime = targetA;
+      }
     };
     bInput.oninput = function () {
       loopRange.b = Math.max(parseInt(bInput.value, 10), parseInt(aInput.value, 10) + 1);
@@ -1044,10 +1094,12 @@
     var box = el('div', 'pip-widget');
     box.innerHTML =
       '<div class="pip-head"><span>MINI PLAYER</span><button class="pip-close" title="Close">\u2715</button></div>' +
-      '<video id="pip-video" src="' + sourceVideo.currentSrc + '" muted loop playsinline autoplay></video>';
+      '<video id="pip-video" src="' + sourceVideo.currentSrc + '" ' + (Super.isMuted ? 'muted ' : '') + 'loop playsinline autoplay></video>';
     document.body.appendChild(box);
     var v = qs('video', box);
-    v.currentTime = sourceVideo.currentTime || 0;
+    v.muted = Super.isMuted;
+    var cur = (sourceVideo && isFinite(sourceVideo.currentTime) && !isNaN(sourceVideo.currentTime)) ? sourceVideo.currentTime : 0;
+    if (isFinite(cur)) v.currentTime = cur;
     v.play().catch(function () {});
     qs('.pip-close', box).addEventListener('click', closePiP);
     pip.el = box;
@@ -1063,8 +1115,9 @@
     var stage = document.getElementById('lb-media');
 
     if (p.isVideo) {
-      stage.innerHTML = '<video id="lb-video" src="' + applyResolution(p.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(p.streamSrc || '') + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" controls autoplay loop playsinline></video>';
+      stage.innerHTML = '<video id="lb-video" src="' + applyResolution(p.streamSrc, Super.resolution) + '" data-base-src="' + escapeAttr(p.streamSrc || '') + '" data-fallback-src="' + escapeAttr(p.fallbackSrc || '') + '" poster="' + p.poster + '" ' + (Super.isMuted ? 'muted ' : '') + 'controls autoplay loop playsinline></video>';
       var lbVideoEl = document.getElementById('lb-video');
+      lbVideoEl.muted = Super.isMuted;
       bindVideoFallback(lbVideoEl);
       bindLoopRange(lbVideoEl);
       qs('#lb-ab-range').hidden = false;
@@ -1315,8 +1368,10 @@
     items.forEach(function (p) {
       var cell = el('div', 'compare-cell');
       cell.innerHTML = '<video class="compare-video" src="' + applyResolution(pinnedStreamUrl(p), Super.resolution) +
-        '" data-base-src="' + escapeAttr(pinnedStreamUrl(p)) + '" muted loop playsinline autoplay></video>' +
+        '" data-base-src="' + escapeAttr(pinnedStreamUrl(p)) + '" ' + (Super.isMuted ? 'muted ' : '') + 'loop playsinline autoplay></video>' +
         '<span class="compare-label">' + escapeHtml(p.title) + '</span>';
+      var cv = qs('video', cell);
+      if (cv) cv.muted = Super.isMuted;
       grid.appendChild(cell);
     });
     var scrub = qs('#compare-scrub', win);
@@ -1386,6 +1441,14 @@
         qsa('.theme-select').forEach(function (s) { s.value = Super.theme; });
       });
     });
+
+    /* ---- Global Mute / Unmute Controller ---- */
+    qsa('.global-mute-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        toggleGlobalMute();
+      });
+    });
+    updateGlobalMuteUI();
 
     /* ---- Sync All Loops: time-align every currently playing video ---- */
     qsa('.sync-loops-btn').forEach(function (btn) {
@@ -1598,6 +1661,11 @@
         return;
       }
       if (typing) return;
+      if (!typing && (e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        toggleGlobalMute();
+        return;
+      }
       if (e.key === 'Escape' && WM.activeId) minimizeWindow(WM.activeId);
     });
   }
