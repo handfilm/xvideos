@@ -554,6 +554,124 @@
   window.MULTI_AI_STREAM = true;
 </script>
 <script src="https://bot.handsandhead.com/chat-widget.js"></script>
+
+<!-- Service Worker, Offline Mode & Cache Visual Indicator -->
+<script>
+  (function initServiceWorkerAndOfflineSystem() {
+    var lastToastTime = 0;
+
+    function triggerToast(msg) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(msg);
+      } else {
+        var t = document.getElementById('toast');
+        if (t) {
+          t.textContent = msg;
+          t.classList.add('show');
+          clearTimeout(window._toastTimer);
+          window._toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+        }
+      }
+    }
+
+    function setStatusIndicator(mode, label) {
+      var dots = document.querySelectorAll('.status-dot');
+      var texts = document.querySelectorAll('#status-text');
+      
+      dots.forEach(function (dot) {
+        dot.classList.remove('cached', 'offline');
+        if (mode === 'offline') {
+          dot.classList.add('offline');
+          dot.title = 'Offline Mode Active — Assets served from Service Worker cache';
+        } else if (mode === 'cached') {
+          dot.classList.add('cached');
+          dot.title = 'Cache Active — Assets served from Service Worker cache';
+        } else {
+          dot.title = 'System Live & Synchronized';
+        }
+      });
+
+      texts.forEach(function (txt) {
+        if (mode === 'offline') {
+          txt.textContent = label || 'OFFLINE (CACHED)';
+          txt.style.color = '#ffb700';
+        } else if (mode === 'cached') {
+          txt.textContent = label || 'CACHED';
+          txt.style.color = '#00ff88';
+        } else {
+          txt.textContent = label || 'LIVE';
+          txt.style.color = '';
+        }
+      });
+    }
+
+    // 1. Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function (reg) {
+            console.log('[RAWX] Service Worker active with scope:', reg.scope);
+            // Handle updates
+            reg.addEventListener('updatefound', function () {
+              var newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', function () {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    triggerToast('OFFLINE CACHE UPDATED // NEW ASSETS READY');
+                  }
+                });
+              }
+            });
+          })
+          .catch(function (err) {
+            console.warn('[RAWX] Service Worker registration failed:', err);
+          });
+      });
+
+      // Listen for messages from SW when assets are served from cache
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'RAWX_CACHE_SERVED') {
+          // Display visual indicator on the status dot in the OS top bar
+          if (!navigator.onLine) {
+            setStatusIndicator('offline', 'OFFLINE (CACHED)');
+          } else {
+            setStatusIndicator('cached', 'CACHED');
+          }
+
+          // Debounced toast notification so multiple rapid image fetches don't spam
+          var now = Date.now();
+          if (now - lastToastTime > 6000) {
+            lastToastTime = now;
+            triggerToast('ASSETS SERVED FROM CACHE // OFFLINE READY');
+          }
+        }
+      });
+    }
+
+    // 2. Online / Offline transitions
+    function handleConnectionChange() {
+      if (!navigator.onLine) {
+        setStatusIndicator('offline', 'OFFLINE (CACHED)');
+        triggerToast('OFFLINE MODE ACTIVE // SERVING FROM SERVICE WORKER CACHE');
+        document.body.dataset.isOffline = 'true';
+      } else {
+        setStatusIndicator('live', 'LIVE');
+        if (document.body.dataset.isOffline === 'true') {
+          triggerToast('ONLINE // CONNECTION RESTORED');
+          document.body.dataset.isOffline = 'false';
+        }
+      }
+    }
+
+    window.addEventListener('offline', handleConnectionChange);
+    window.addEventListener('online', handleConnectionChange);
+
+    // Initial check on startup
+    if (!navigator.onLine) {
+      handleConnectionChange();
+    }
+  })();
+</script>
   
 </body>
 </html>

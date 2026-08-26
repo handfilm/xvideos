@@ -83,8 +83,23 @@ html, body {
   display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   font-size: 10px; letter-spacing: .1em; color: var(--steel-dim);
 }
-.status-dot{ width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; animation: pulse 1.6s infinite; }
+.status-dot{
+  width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; animation: pulse 1.6s infinite;
+  transition: all 0.3s ease;
+}
+.status-dot.cached{
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88, 0 0 14px rgba(0, 255, 136, 0.6);
+  animation: cachedGlow 1.4s infinite ease-in-out;
+}
+.status-dot.offline{
+  background: #ffb700;
+  box-shadow: 0 0 8px #ffb700, 0 0 14px rgba(255, 183, 0, 0.6);
+  animation: offlinePulse 1.2s infinite ease-in-out;
+}
 @keyframes pulse{ 0%,100%{ opacity: 1; } 50%{ opacity: .3; } }
+@keyframes cachedGlow{ 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.35); opacity: 0.7; } }
+@keyframes offlinePulse{ 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.4); opacity: 0.6; } }
 .os-topbar-stats b{ color: var(--white); font-weight: 700; }
 
 /* ---------------- Desktop surface ---------------- */

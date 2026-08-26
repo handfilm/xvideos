@@ -80,11 +80,13 @@
   }
   function showToast(msg) {
     var t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(showToast._t);
     showToast._t = setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
+  window.showToast = showToast;
 
   /* ================================================================
      SUPER-APP STATE — resolution, theme, spotlight, sync, presentation, mute.
