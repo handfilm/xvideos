@@ -180,6 +180,12 @@ body.presentation-mode .win{ border: none; box-shadow: none; }
   display: flex; flex-direction: column;
   min-width: 360px; min-height: 280px;
 }
+.win.win-tidying{
+  transition: left 0.35s cubic-bezier(0.2, 0.9, 0.3, 1),
+              top 0.35s cubic-bezier(0.2, 0.9, 0.3, 1),
+              width 0.35s cubic-bezier(0.2, 0.9, 0.3, 1),
+              height 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
 .win.win-focused{ border-color: var(--red); box-shadow: 8px 8px 0 rgba(255,0,0,.28); }
 .win.win-minimized{ display: none; }
 .win.win-maximized{

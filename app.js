@@ -412,6 +412,108 @@
     focusWindow(id);
   }
 
+  /* ---------------- Tidy Windows (Grid Layout Alignment) ---------------- */
+  function tidyWindows() {
+    var winList = Object.keys(WM.windows).map(function (k) { return WM.windows[k]; });
+    if (!winList.length) {
+      showToast('NO OPEN WINDOWS TO TIDY');
+      return;
+    }
+
+    // Restore any minimized / maximized windows so they cleanly participate in the grid
+    winList.forEach(function (w) {
+      if (w.minimized) {
+        w.minimized = false;
+        w.dom.classList.remove('win-minimized');
+      }
+      if (w.maximized) {
+        w.maximized = false;
+        w.dom.classList.remove('win-maximized');
+      }
+    });
+
+    var count = winList.length;
+    var dWidth = (WM.desktop && WM.desktop.clientWidth) ? WM.desktop.clientWidth : window.innerWidth;
+    var dHeight = (WM.desktop && WM.desktop.clientHeight) ? WM.desktop.clientHeight : (window.innerHeight - 100);
+
+    var padX = 24;
+    var padY = 24;
+    var gap = 16;
+
+    var cols, rows;
+    if (count === 1) {
+      cols = 1; rows = 1;
+    } else if (count === 2) {
+      if (dWidth >= 900) { cols = 2; rows = 1; }
+      else { cols = 1; rows = 2; }
+    } else if (count === 3) {
+      if (dWidth >= 1400) { cols = 3; rows = 1; }
+      else { cols = 2; rows = 2; }
+    } else if (count === 4) {
+      cols = 2; rows = 2;
+    } else if (count <= 6) {
+      if (dWidth >= 1200) { cols = 3; rows = 2; }
+      else { cols = 2; rows = Math.ceil(count / 2); }
+    } else if (count <= 9) {
+      cols = 3; rows = 3;
+    } else {
+      cols = Math.ceil(Math.sqrt(count));
+      rows = Math.ceil(count / cols);
+    }
+
+    var availW = dWidth - (padX * 2) - ((cols - 1) * gap);
+    var availH = dHeight - (padY * 2) - ((rows - 1) * gap);
+
+    var cellW = Math.floor(availW / cols);
+    var cellH = Math.floor(availH / rows);
+
+    // Maintain comfortable minimum usability dimensions
+    cellW = Math.max(360, cellW);
+    cellH = Math.max(280, cellH);
+
+    winList.forEach(function (w, idx) {
+      var c = idx % cols;
+      var r = Math.floor(idx / cols);
+
+      var x = padX + c * (cellW + gap);
+      var y = padY + r * (cellH + gap);
+      var width = cellW;
+      var height = cellH;
+
+      if (count === 1) {
+        width = Math.min(Math.max(860, Math.floor(dWidth * 0.75)), dWidth - padX * 2);
+        height = Math.min(Math.max(560, Math.floor(dHeight * 0.82)), dHeight - padY * 2);
+        x = Math.max(padX, Math.floor((dWidth - width) / 2));
+        y = Math.max(padY, Math.floor((dHeight - height) / 2));
+      } else if (count === 3 && cols === 2 && idx === 2) {
+        // Center the 3rd window across both columns
+        x = padX + Math.floor((dWidth - padX * 2 - cellW) / 2);
+      }
+
+      w.x = x;
+      w.y = y;
+      w.width = width;
+      w.height = height;
+
+      w.dom.classList.add('win-tidying');
+      w.dom.style.left = w.x + 'px';
+      w.dom.style.top = w.y + 'px';
+      w.dom.style.width = w.width + 'px';
+      w.dom.style.height = w.height + 'px';
+    });
+
+    setTimeout(function () {
+      winList.forEach(function (w) {
+        w.dom.classList.remove('win-tidying');
+      });
+    }, 400);
+
+    renderTaskbar();
+    updateHeroDim();
+    showToast('TIDIED ' + count + ' WINDOW' + (count === 1 ? '' : 'S') + ' IN GRID');
+  }
+  window.tidyWindows = tidyWindows;
+
   /* ---------------- Window DOM shell ---------------- */
   function buildWindowDOM(w) {
     var d = el('div', 'win');
@@ -1452,6 +1554,13 @@
     });
     updateGlobalMuteUI();
 
+    /* ---- Tidy Windows: auto-align all open desktop windows in a grid ---- */
+    qsa('.tidy-windows-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tidyWindows();
+      });
+    });
+
     /* ---- Sync All Loops: time-align every currently playing video ---- */
     qsa('.sync-loops-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -1663,6 +1772,12 @@
         return;
       }
       if (typing) return;
+      // Alt+T or Shift+T — Tidy open desktop windows into a clean grid
+      if (!typing && (e.key === 't' || e.key === 'T') && (e.altKey || e.shiftKey) && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        tidyWindows();
+        return;
+      }
       if (!typing && (e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         toggleGlobalMute();
