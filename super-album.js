@@ -22,87 +22,135 @@
     driveRootFolderId: '1zno_n1n23dbIb4HE8giapSAqGS9WZd33',
     driveApiKey: 'AIzaSyCqU3qT5SaRYTZev6ZfChJvApRDGDzv88Y',
     pageSize: 100,
-    r2Enabled: true,
-    r2BaseUrl: 'https://xvideos.handsandhead.com',
+    r2Enabled: false,
+    r2BaseUrl: '',
     fps: 60
   };
 
   var FOLDER_MIME = 'application/vnd.google-apps.folder';
   var DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
 
-  // Seed clips
+  // Seed clips with verified Google Drive motion assets & stream endpoints
   var SEED_CATALOG = [
     {
-      id: 'rx-sig-01',
-      title: 'AURA 360° HYPER-FLOW',
-      category: 'SIGNATURE ACTIVE',
+      id: '1zNyeEXndfKFGrTp8ZywcxTRKeTzmrEar',
+      title: 'CATWALK 360° HYPER-FLOW',
+      category: 'CATWALK',
       motion: '360° ORBITAL TENSION',
       fabric: 'ULTRA-COMPRESSION MATTE',
       aspect: '9:16 VERTICAL CINEMA',
       tagline: 'SEAMLESS FABRIC DRAPE RESPONDING TO KINETIC ROTATION IN 60FPS.',
-      src: 'https://xvideos.handsandhead.com/signature_01.mp4',
-      fallbackSrc: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/signature_01.mp4',
-      poster: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/posters/sig1.jpg'
+      src: '/api/stream/1zNyeEXndfKFGrTp8ZywcxTRKeTzmrEar',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1zNyeEXndfKFGrTp8ZywcxTRKeTzmrEar?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1zNyeEXndfKFGrTp8ZywcxTRKeTzmrEar'
     },
     {
-      id: 'rx-sig-02',
-      title: 'SHADOW SILHOUETTE CADENCE',
-      category: 'HIGH-TENSION ACTIVE',
+      id: '1X1Zx3d1OwOiAOK25Y8GdFtRjpi39cBDm',
+      title: 'PRISCILLA RICART — WALK 01',
+      category: 'CATWALK',
       motion: 'LATERAL AXIS ARTICULATION',
       fabric: 'DOUBLE-KNIT HYDRO-FIBER',
       aspect: '9:16 VERTICAL CINEMA',
       tagline: 'PRECISE VOLUMETRIC LIGHTING HIGHLIGHTING MUSCULOSKELETAL POSTURE.',
-      src: 'https://xvideos.handsandhead.com/signature_02.mp4',
-      fallbackSrc: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/signature_02.mp4',
-      poster: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/posters/sig2.jpg'
+      src: '/api/stream/1X1Zx3d1OwOiAOK25Y8GdFtRjpi39cBDm',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1X1Zx3d1OwOiAOK25Y8GdFtRjpi39cBDm?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1X1Zx3d1OwOiAOK25Y8GdFtRjpi39cBDm'
     },
     {
-      id: 'rx-lin-01',
-      title: 'OBSIDIAN LACE KINETICS',
-      category: 'COUTURE LINGERIE',
-      motion: 'MICRO-VIBRATION DYNAMICS',
+      id: '19PAdqi8Rs-mXtYH6LlESC2vt1MhvEvgD',
+      title: 'PRISCILLA RICART — WALK 02',
+      category: 'CATWALK',
+      motion: 'DYNAMIC ANATOMICAL POSTURE',
       fabric: 'SHEER GEOMETRIC TULLE',
       aspect: '9:16 VERTICAL CINEMA',
       tagline: 'INTRICATE STRUCTURAL RIBBING WITH DELICATE LIGHT SCATTERING.',
-      src: 'https://xvideos.handsandhead.com/lingerie_01.mp4',
-      fallbackSrc: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/lingerie_01.mp4',
-      poster: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/posters/lin1.jpg'
+      src: '/api/stream/19PAdqi8Rs-mXtYH6LlESC2vt1MhvEvgD',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/19PAdqi8Rs-mXtYH6LlESC2vt1MhvEvgD?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/19PAdqi8Rs-mXtYH6LlESC2vt1MhvEvgD'
     },
     {
-      id: 'rx-lin-02',
-      title: 'SCULPTURAL VELVET CADENCE',
-      category: 'MINIMAL ARCHIVE',
-      motion: 'CONTRA-POSTURE ELEVATION',
+      id: '1Br7INoTtcPIlSqlX6J2jkB7_CAfCRsPa',
+      title: 'PRISCILLA RICART — WALK 03',
+      category: 'CATWALK',
+      motion: 'CADENCE FLOW DYNAMICS',
       fabric: 'HIGH-GLOSS STRETCH SILK',
       aspect: '9:16 VERTICAL CINEMA',
       tagline: 'MONOCHROMATIC ANATOMICAL MOTION STUDY WITH CONTROLLED SPECULARITY.',
-      src: 'https://xvideos.handsandhead.com/lingerie_02.mp4',
-      fallbackSrc: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/lingerie_02.mp4',
-      poster: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/posters/lin2.jpg'
+      src: '/api/stream/1Br7INoTtcPIlSqlX6J2jkB7_CAfCRsPa',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1Br7INoTtcPIlSqlX6J2jkB7_CAfCRsPa?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1Br7INoTtcPIlSqlX6J2jkB7_CAfCRsPa'
     },
     {
-      id: 'rx-act-01',
-      title: 'CYCLIC VELOCITY STRIDE',
-      category: 'SPORTSWEAR PRO',
-      motion: 'RAPID PENDULUM SWING',
+      id: '1_XtY4EB5NYheK8je4NHnfrC6KA8k786e',
+      title: 'PRISCILLA RICART — WALK 04',
+      category: 'CATWALK',
+      motion: 'ROTATIONAL STRIDE ELEVATION',
       fabric: 'VENTILATED HONEYCOMB MESH',
       aspect: '9:16 VERTICAL CINEMA',
       tagline: 'HIGH-IMPACT SEAMLESS MOVEMENT WITH DYNAMIC ANISOTROPIC SHEEN.',
-      src: 'https://xvideos.handsandhead.com/active_01.mp4',
-      fallbackSrc: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/active_01.mp4',
-      poster: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/posters/act1.jpg'
+      src: '/api/stream/1_XtY4EB5NYheK8je4NHnfrC6KA8k786e',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1_XtY4EB5NYheK8je4NHnfrC6KA8k786e?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1_XtY4EB5NYheK8je4NHnfrC6KA8k786e'
     },
     {
-      id: 'rx-act-02',
-      title: 'ISOMETRIC TENSION MATRIX',
-      category: 'AEROBIC KINETICS',
-      motion: 'STATIONARY TENSION HOLD',
+      id: '1VlEhlSSE6qnOicLJHVTjvbuwrFLYP5HE',
+      title: 'CATWALK KINETIC ANGLE 02',
+      category: 'CATWALK',
+      motion: 'ISOMETRIC TENSION MATRIX',
       fabric: 'RECYCLED POLYAMIDE ELASTANE',
       aspect: '9:16 VERTICAL CINEMA',
       tagline: 'CALCULATED FIBER STRESS ANALYSIS ACROSS CRITICAL ANATOMICAL SEAMS.',
-      src: 'https://xvideos.handsandhead.com/active_02.mp4',
-      fallbackSrc: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/active_02.mp4',
-      poster: 'https://pub-2b362095f9c4456ea74aa4c57cb8c512.r2.dev/posters/act2.jpg'
+      src: '/api/stream/1VlEhlSSE6qnOicLJHVTjvbuwrFLYP5HE',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1VlEhlSSE6qnOicLJHVTjvbuwrFLYP5HE?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1VlEhlSSE6qnOicLJHVTjvbuwrFLYP5HE'
+    },
+    {
+      id: '11UWlvPxyVDvu8fy-u8kLrFZcVY0bw0tC',
+      title: 'CATWALK FLOW ANGLE 01',
+      category: 'CATWALK',
+      motion: 'ACCELERATED CADENCE',
+      fabric: 'COMPRESSION NYLON',
+      aspect: '9:16 VERTICAL CINEMA',
+      tagline: 'RAPID AXIAL ROTATION IN HIGH-SPEED CAPTURE.',
+      src: '/api/stream/11UWlvPxyVDvu8fy-u8kLrFZcVY0bw0tC',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/11UWlvPxyVDvu8fy-u8kLrFZcVY0bw0tC?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/11UWlvPxyVDvu8fy-u8kLrFZcVY0bw0tC'
+    },
+    {
+      id: '1MFrBMa4dvm0MIzLXHGpicdGwUzFq3wkp',
+      title: 'JESS — RAWX MOTION STUDY',
+      category: 'JESS',
+      motion: 'ISOMETRIC SILHOUETTE',
+      fabric: 'MONOCHROMATIC STRETCH SILK',
+      aspect: '9:16 VERTICAL CINEMA',
+      tagline: 'HIGH-PRECISION ARTICULATION IN VOLUMETRIC STUDIO LIGHTING.',
+      src: '/api/stream/1MFrBMa4dvm0MIzLXHGpicdGwUzFq3wkp',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1MFrBMa4dvm0MIzLXHGpicdGwUzFq3wkp?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1MFrBMa4dvm0MIzLXHGpicdGwUzFq3wkp'
+    },
+    {
+      id: '1wt4IuDOCldZ0XfrZQyYMVMAKiUEWejr4',
+      title: 'SLAYED INTRO SEQUENCE',
+      category: 'HANDFILM',
+      motion: 'HIGH-VELOCITY KINETICS',
+      fabric: 'AEROBIC COMPRESSION MESH',
+      aspect: '9:16 VERTICAL CINEMA',
+      tagline: 'VOLUMETRIC KINEMATIC STUDY ACROSS MULTI-AXIS MOVEMENT.',
+      src: '/api/stream/1wt4IuDOCldZ0XfrZQyYMVMAKiUEWejr4',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1wt4IuDOCldZ0XfrZQyYMVMAKiUEWejr4?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1wt4IuDOCldZ0XfrZQyYMVMAKiUEWejr4'
+    },
+    {
+      id: '1C8j89nZgDb0IcIKJ37EK7gGgcL7Jx5RV',
+      title: 'TUSHY 4K MOTION ARCHIVE',
+      category: 'HANDFILM',
+      motion: 'MACRO VOLUMETRIC FOCUS',
+      fabric: 'VENTILATED HONEYCOMB MATRIX',
+      aspect: '9:16 VERTICAL CINEMA',
+      tagline: 'RAW ULTRA-HIGH-RESOLUTION DYNAMIC TEXTURE ARTICULATION.',
+      src: '/api/stream/1C8j89nZgDb0IcIKJ37EK7gGgcL7Jx5RV',
+      fallbackSrc: 'https://www.googleapis.com/drive/v3/files/1C8j89nZgDb0IcIKJ37EK7gGgcL7Jx5RV?alt=media&key=' + CONFIG.driveApiKey,
+      poster: '/api/poster/1C8j89nZgDb0IcIKJ37EK7gGgcL7Jx5RV'
     }
   ];
 
@@ -219,14 +267,15 @@
       var currentTier = parseInt(video.dataset.fallbackTier || '0', 10);
 
       if (currentTier === 0 && item && item.fallbackSrc && video.src !== item.fallbackSrc) {
+        // Tier 1: Retry with direct Drive media link or timestamped proxy
         video.dataset.fallbackTier = '1';
         video.src = item.fallbackSrc;
         video.load();
         video.play().catch(function () {});
       } else if (currentTier <= 1 && item && item.id) {
+        // Tier 2: Force timestamped proxy stream
         video.dataset.fallbackTier = '2';
-        var driveProxy = DRIVE_FILES_URL + '/' + item.id + '?alt=media&key=' + CONFIG.driveApiKey;
-        video.src = driveProxy;
+        video.src = '/api/stream/' + item.id + '?t=' + Date.now();
         video.load();
         video.play().catch(function () {});
       } else {
@@ -255,7 +304,7 @@
     preloadAsset(next2);
   }
 
-  /* ---------------- Drive & R2 Root Crawler ---------------- */
+  /* ---------------- Drive & High-Speed Stream Catalog Loader ---------------- */
   function driveList(parentId, foldersOnly, pageToken) {
     var mimeClause = foldersOnly
       ? " and mimeType='" + FOLDER_MIME + "'"
@@ -287,8 +336,61 @@
 
   function scanAllRootVideos() {
     State.isLoadingDrive = true;
-    showToast('DISCOVERING DRIVE ROOT MOTION ASSETS…');
+    showToast('DISCOVERING HIGH-SPEED MOTION CATALOG…');
 
+    // High-performance path: server catalog API
+    fetch('/api/catalog')
+      .then(function (res) {
+        if (!res.ok) throw new Error('Server catalog status ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (data && data.items && data.items.length > 0) {
+          if (data.categories && data.categories.length > 0) {
+            State.categories = data.categories;
+            updateCategorySelect();
+          }
+
+          var addedCount = 0;
+          data.items.forEach(function (catItem) {
+            var exists = State.catalog.some(function (c) { return c.id === catItem.id; });
+            if (!exists) {
+              var specs = getDynamicMotionSpec(catItem.title, State.catalog.length);
+              State.catalog.push({
+                id: catItem.id,
+                title: catItem.title,
+                category: (catItem.category || 'RAWX ACTIVE').toUpperCase(),
+                tag: catItem.tag ? catItem.tag.toUpperCase() : null,
+                motion: specs.motion,
+                fabric: specs.fabric,
+                aspect: '9:16 VERTICAL CINEMA',
+                tagline: specs.tagline,
+                src: catItem.streamSrc || ('/api/stream/' + catItem.id),
+                fallbackSrc: catItem.fallbackSrc || (DRIVE_FILES_URL + '/' + catItem.id + '?alt=media&key=' + CONFIG.driveApiKey),
+                poster: catItem.poster || ('/api/poster/' + catItem.id)
+              });
+              addedCount++;
+            }
+          });
+
+          State.isLoadingDrive = false;
+          showToast('STREAMING ENGINE READY // ' + State.catalog.length + ' CLIPS LOADED');
+          renderFilmstrip();
+          updateFilmstripCount();
+          if (State.mode === 'wall') renderMegaWall();
+          if (State.mode === 'curated') renderLookbooks();
+          preloadNextUpcoming();
+        } else {
+          fallbackClientDriveCrawl();
+        }
+      })
+      .catch(function (err) {
+        console.warn('Server catalog unavailable, running client Drive crawl:', err.message);
+        fallbackClientDriveCrawl();
+      });
+  }
+
+  function fallbackClientDriveCrawl() {
     driveList(CONFIG.driveRootFolderId, true)
       .then(function (catData) {
         var categories = catData.files || [];
@@ -340,9 +442,8 @@
                     /\.(mp4|webm|mov|m4v)$/i.test(file.name);
       if (!isVideo) return;
 
-      var r2Url = buildR2StreamSrc(file, categoryName, tagName);
+      var streamSrc = '/api/stream/' + file.id;
       var driveStreamUrl = DRIVE_FILES_URL + '/' + file.id + '?alt=media&key=' + CONFIG.driveApiKey;
-      var streamSrc = r2Url || driveStreamUrl;
 
       if (State.catalog.some(function (c) { return c.id === file.id || c.src === streamSrc; })) {
         return;
@@ -350,9 +451,7 @@
 
       var title = titleFromName(file.name);
       var specs = getDynamicMotionSpec(title, State.catalog.length);
-      var poster = file.thumbnailLink
-        ? file.thumbnailLink.replace(/=s\d+$/, '=s1200')
-        : 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w1200';
+      var poster = '/api/poster/' + file.id;
 
       State.catalog.push({
         id: file.id,
@@ -435,15 +534,6 @@
     if (!item) return;
 
     var existingActive = qs('.cinema-slide-layer.active', layersWrap);
-    if (existingActive) {
-      existingActive.classList.remove('active');
-      existingActive.classList.add('leaving');
-      setTimeout(function () {
-        if (existingActive && existingActive.parentNode) {
-          existingActive.parentNode.removeChild(existingActive);
-        }
-      }, 700);
-    }
 
     var newLayer = el('div', 'cinema-slide-layer fit-' + State.fitMode);
 
@@ -466,11 +556,32 @@
     video.playsInline = true;
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
+    video.preload = 'auto';
 
     bindVideoFallback(video, item);
 
     // Attach to State
     State.activeVideoEl = video;
+
+    var transitioned = false;
+    function activateNewLayer() {
+      if (transitioned) return;
+      transitioned = true;
+      newLayer.classList.add('active');
+      newLayer.classList.add('video-ready');
+      if (existingActive && existingActive !== newLayer) {
+        existingActive.classList.remove('active');
+        existingActive.classList.add('leaving');
+        setTimeout(function () {
+          if (existingActive && existingActive.parentNode) {
+            existingActive.parentNode.removeChild(existingActive);
+          }
+        }, 800);
+      }
+      if (State.isPlaying) {
+        video.play().catch(function () {});
+      }
+    }
 
     // Timeline sync & Buffer monitoring
     video.addEventListener('timeupdate', function () {
@@ -496,15 +607,12 @@
     });
 
     video.addEventListener('canplay', function () {
-      newLayer.classList.add('video-ready');
-      if (State.isPlaying) {
-        video.play().catch(function () {});
-      }
+      activateNewLayer();
       updateBufferBar(video);
     });
 
     video.addEventListener('playing', function () {
-      newLayer.classList.add('video-ready');
+      activateNewLayer();
       updatePlayButtonUI(true);
     });
 
@@ -515,12 +623,8 @@
     newLayer.appendChild(video);
     layersWrap.appendChild(newLayer);
 
-    requestAnimationFrame(function () {
-      newLayer.classList.add('active');
-      if (State.isPlaying) {
-        video.play().catch(function () {});
-      }
-    });
+    // Fallback: Show new slide poster after 300ms if decoding takes a moment
+    setTimeout(activateNewLayer, 300);
 
     updateTextLayover(item, index);
     updateFilmstripActive(index);

@@ -22,18 +22,9 @@
     driveApiKey: 'AIzaSyCqU3qT5SaRYTZev6ZfChJvApRDGDzv88Y',
     pageSize: 60,
 
-    // ---- R2 video streaming (replaces live Drive streaming) ----
-    // Set this to your R2 bucket's Public Development URL (or Custom
-    // Domain once you set one up), e.g. 'https://pub-xxxxxxxxxxxx.r2.dev'
-    // Leave it blank ('') to keep streaming every video from Drive, same
-    // as before — the app checks for a non-empty string before using R2.
-    r2Enabled: true,
-    r2BaseUrl: 'https://xvideos.handsandhead.com', // custom domain, confirmed live (200 OK)
-
-    // Migration is running in capped batches (10GB free tier), so at any
-    // given moment some videos will be on R2 and some won't yet. Keep this
-    // true so the player automatically falls back to the old Drive stream
-    // URL if the R2 file 404s, instead of just failing silently.
+    // ---- Advanced Edge Streaming ----
+    r2Enabled: false,
+    r2BaseUrl: '',
     r2FallbackToDrive: true
   };
 
@@ -253,23 +244,16 @@
 
   function parseDriveFile(file, folderNames) {
     var isVideo = !!(file.mimeType && file.mimeType.indexOf('video/') === 0);
+    var highSpeedStreamSrc = isVideo ? '/api/stream/' + file.id : null;
     var driveStreamSrc = isVideo ? DRIVE_FILES_URL + '/' + file.id + '?alt=media&key=' + CONFIG.driveApiKey : null;
-    var r2StreamSrc = isVideo ? buildR2StreamSrc(file, folderNames) : null;
     return {
       id: file.id,
       title: titleFromName(file.name),
       isVideo: isVideo,
-      src: 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w800',
-      poster: file.thumbnailLink ? file.thumbnailLink.replace(/=s\d+$/, '=s1200')
-        : 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w1200',
-      full: 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w2000',
-      // Prefer R2 when we could build a path for it; otherwise go straight
-      // to Drive (covers r2 disabled, no base URL set yet, or this file's
-      // folder names weren't in cache for some reason).
-      streamSrc: r2StreamSrc || driveStreamSrc,
-      // Always kept around, even when streamSrc is already Drive, so the
-      // error-fallback handler on the <video> tag has something to swap
-      // to no matter which one was used first.
+      src: '/api/poster/' + file.id,
+      poster: '/api/poster/' + file.id,
+      full: '/api/poster/' + file.id,
+      streamSrc: highSpeedStreamSrc || driveStreamSrc,
       fallbackSrc: driveStreamSrc
     };
   }

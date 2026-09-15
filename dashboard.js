@@ -19,8 +19,8 @@
     driveRootFolderId: '1zno_n1n23dbIb4HE8giapSAqGS9WZd33',
     driveApiKey: 'AIzaSyCqU3qT5SaRYTZev6ZfChJvApRDGDzv88Y',
     pageSize: 60,
-    r2Enabled: true,
-    r2BaseUrl: 'https://xvideos.handsandhead.com'
+    r2Enabled: false,
+    r2BaseUrl: ''
   };
 
   var TAGS_PER_BATCH = 6;      // how many tag folders we pull one fresh page from per scroll trigger
@@ -100,15 +100,15 @@
   }
   function parseDriveFile(file, folderNames) {
     var isVideo = !!(file.mimeType && file.mimeType.indexOf('video/') === 0);
+    var highSpeedStreamSrc = isVideo ? '/api/stream/' + file.id : null;
     var driveStreamSrc = isVideo ? DRIVE_FILES_URL + '/' + file.id + '?alt=media&key=' + CONFIG.driveApiKey : null;
-    var r2StreamSrc = isVideo ? buildR2StreamSrc(file, folderNames) : null;
     return {
       id: file.id,
       title: titleFromName(file.name),
       isVideo: isVideo,
-      src: 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w800',
-      poster: file.thumbnailLink ? file.thumbnailLink.replace(/=s\d+$/, '=s1200') : 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=w1200',
-      streamSrc: r2StreamSrc || driveStreamSrc,
+      src: '/api/poster/' + file.id,
+      poster: '/api/poster/' + file.id,
+      streamSrc: highSpeedStreamSrc || driveStreamSrc,
       fallbackSrc: driveStreamSrc,
       catName: folderNames ? folderNames.category : null,
       tagName: folderNames ? folderNames.tag : null

@@ -305,6 +305,32 @@ body.album-body, body {
   height: 100%;
   object-fit: cover;
   object-position: center;
+  position: absolute;
+  inset: 0;
+}
+
+.cinema-slide-layer .cinema-slide-poster {
+  z-index: 1;
+  opacity: 1;
+  transition: opacity 0.6s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.cinema-slide-layer.video-ready .cinema-slide-poster {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cinema-slide-layer video {
+  z-index: 2;
+  opacity: 0;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  transition: opacity 0.6s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.cinema-slide-layer.video-ready video {
+  opacity: 1;
 }
 
 /* Cinema Overlay effects */
