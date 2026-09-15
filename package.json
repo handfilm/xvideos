@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js",
     "build": "echo 'Static build ready'",
-    "start": "node server.js"
+    "start": "node server.js",
+    "lint": "node -c server.js"
   },
   "dependencies": {
     "express": "^5.2.1"
