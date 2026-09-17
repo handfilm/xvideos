@@ -266,20 +266,26 @@
       if (video.dataset.fallbackTier === '3') return;
       var currentTier = parseInt(video.dataset.fallbackTier || '0', 10);
 
-      if (currentTier === 0 && item && item.fallbackSrc && video.src !== item.fallbackSrc) {
-        // Tier 1: Retry with direct Drive media link or timestamped proxy
+      if (currentTier === 0 && item && item.id) {
+        // Tier 1: Force timestamped proxy stream
         video.dataset.fallbackTier = '1';
+        video.src = '/api/stream/' + item.id + '?retry=1&t=' + Date.now();
+        video.load();
+        if (video.matches(':hover') || State.viewMode === 'cinema') video.play().catch(function () {});
+      } else if (currentTier <= 1 && item && item.id) {
+        // Tier 2: Direct Google Drive usercontent CDN
+        video.dataset.fallbackTier = '2';
+        video.src = 'https://drive.usercontent.google.com/download?id=' + item.id + '&export=download&confirm=t';
+        video.load();
+        if (video.matches(':hover') || State.viewMode === 'cinema') video.play().catch(function () {});
+      } else if (currentTier <= 2 && item && item.fallbackSrc && video.src !== item.fallbackSrc) {
+        // Tier 3: Direct fallback URL
+        video.dataset.fallbackTier = '3';
         video.src = item.fallbackSrc;
         video.load();
-        video.play().catch(function () {});
-      } else if (currentTier <= 1 && item && item.id) {
-        // Tier 2: Force timestamped proxy stream
-        video.dataset.fallbackTier = '2';
-        video.src = '/api/stream/' + item.id + '?t=' + Date.now();
-        video.load();
-        video.play().catch(function () {});
+        if (video.matches(':hover') || State.viewMode === 'cinema') video.play().catch(function () {});
       } else {
-        video.dataset.fallbackTier = '3';
+        video.dataset.fallbackTier = '4';
         console.warn('Video stream fallback exhausted:', video.src);
       }
     });
@@ -289,7 +295,7 @@
     if (!item || !item.src || State.preloadedVideos[item.src]) return;
     var v = document.createElement('video');
     v.src = item.src;
-    v.preload = 'auto';
+    v.preload = 'metadata';
     v.muted = true;
     v.playsInline = true;
     State.preloadedVideos[item.src] = v;
@@ -735,7 +741,12 @@
     clearInterval(State.slideTimer);
 
     if (State.isPlaying) {
-      if (State.activeVideoEl) State.activeVideoEl.play().catch(function () {});
+      if (State.activeVideoEl) {
+        if (window.PlaybackMaster) {
+          window.PlaybackMaster.pauseAllExcept(State.activeVideoEl);
+        }
+        State.activeVideoEl.play().catch(function () {});
+      }
       if (State.playbackMode === 'slideshow') {
         State.slideTimer = setInterval(nextSlide, State.slideIntervalMs);
       }
@@ -1041,21 +1052,9 @@
         entries.forEach(function (entry) {
           var card = entry.target;
           var vid = qs('video', card);
-          if (entry.isIntersecting) {
-            if (vid) {
-              if (!vid.src && vid.dataset.src) {
-                vid.src = vid.dataset.src;
-                vid.load();
-              }
-              vid.play().then(function () {
-                card.classList.add('playing');
-              }).catch(function () {});
-            }
-          } else {
-            if (vid) {
-              vid.pause();
-              card.classList.remove('playing');
-            }
+          if (!entry.isIntersecting && vid && !card.matches(':hover')) {
+            vid.pause();
+            card.classList.remove('playing');
           }
         });
       }, { rootMargin: '140px 0px', threshold: 0.1 });
@@ -1066,7 +1065,7 @@
       var posterUrl = item.poster || (item.fallbackSrc ? item.fallbackSrc : item.src);
       card.innerHTML =
         '<div class="wall-card-scrub-bar"></div>' +
-        '<video src="' + item.src + '" data-fallback-src="' + (item.fallbackSrc || item.src) + '" muted loop playsinline autoplay preload="auto"></video>' +
+        '<video data-src="' + item.src + '" data-fallback-src="' + (item.fallbackSrc || item.src) + '" muted loop playsinline preload="none"></video>' +
         '<div class="wall-card-overlay">' +
           '<span class="wall-card-badge">' + escapeHtml(item.category || 'RAWX') + '</span>' +
           '<div class="wall-card-info">' +
@@ -1083,13 +1082,24 @@
 
       var vid = qs('video', card);
       vid.dataset.src = item.src;
-      vid.preload = i < 8 ? 'auto' : 'none';
+      vid.preload = 'none';
 
       vid.addEventListener('playing', function () { card.classList.add('playing'); });
       vid.addEventListener('canplay', function () { card.classList.add('playing'); });
       bindVideoFallback(vid, item);
 
-      // Fast Mouse Hover Scrubbing on card
+      // Fast Mouse Hover Preview: Play only when hovered
+      card.addEventListener('mouseenter', function () {
+        if (!vid.src && vid.dataset.src) {
+          vid.src = vid.dataset.src;
+        }
+        vid.preload = 'auto';
+        vid.play().then(function () {
+          card.classList.add('playing');
+        }).catch(function () {});
+      });
+
+      // Mouse Hover Scrubbing on card
       var scrubBar = qs('.wall-card-scrub-bar', card);
       card.addEventListener('mousemove', function (e) {
         if (!vid) return;
@@ -1099,13 +1109,15 @@
         if (r.width <= 0) return;
         var pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
         var target = pct * dur;
-        if (isFinite(target)) {
+        if (isFinite(target) && e.buttons === 1) {
           vid.currentTime = target;
         }
         if (scrubBar) scrubBar.style.width = (pct * 100) + '%';
       });
 
       card.addEventListener('mouseleave', function () {
+        vid.pause();
+        card.classList.remove('playing');
         if (scrubBar) scrubBar.style.width = '0%';
       });
 

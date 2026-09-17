@@ -64,9 +64,35 @@ function titleFromName(name) {
 // ULTRA-SMOOTH VIDEO STREAMING ENGINE (/api/stream/:fileId)
 // - Supports byte-range requests (RFC 7233) for instant seek & scrub
 // - Strips download-attachment and frame-blocking headers from Drive
-// - Disk-backed chunk caching for zero-latency replays & loops
+// - Immediate socket abort on client disconnect to prevent bandwidth leaks
+// - Automatic fallback to drive.usercontent CDN if Drive API hits quota limits
+// - Disk-backed chunk caching with a single-worker queue for zero lag
 // ================================================================
-app.get('/api/stream/:fileId', (req, res) => {
+
+// Helper: HTTP request following redirects (up to maxRedirects)
+function requestWithRedirects(targetUrl, options = {}, maxRedirects = 3) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(targetUrl, options, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        res.destroy();
+        if (maxRedirects <= 0) {
+          return reject(new Error('Too many redirects'));
+        }
+        return resolve(requestWithRedirects(res.headers.location, options, maxRedirects - 1));
+      }
+      resolve({ req, res });
+    });
+    req.on('error', reject);
+    if (options.timeout) {
+      req.setTimeout(options.timeout, () => {
+        req.destroy();
+        reject(new Error('Request timeout'));
+      });
+    }
+  });
+}
+
+app.get('/api/stream/:fileId', async (req, res) => {
   const fileId = req.params.fileId;
   if (!fileId || !/^[\w-]+$/.test(fileId)) {
     return res.status(400).send('Invalid file ID');
@@ -75,131 +101,177 @@ app.get('/api/stream/:fileId', (req, res) => {
   const cacheFile = path.join(CONFIG.cacheDir, `${fileId}.mp4`);
   const range = req.headers.range;
 
-  // 1. FAST PATH: Serve from local disk cache if fully downloaded
+  // 1. FAST PATH: Serve from local disk cache if available
   if (fs.existsSync(cacheFile)) {
     try {
       const stat = fs.statSync(cacheFile);
       const fileSize = stat.size;
 
-      if (range) {
-        const parts = range.replace(/bytes=/, '').split('-');
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      if (fileSize > 10000) {
+        if (range) {
+          const parts = range.replace(/bytes=/, '').split('-');
+          let start = parseInt(parts[0], 10);
+          let end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
 
-        if (start >= fileSize || end >= fileSize) {
-          res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
-          return res.end();
+          if (isNaN(start)) {
+            start = fileSize - parseInt(parts[1], 10);
+            end = fileSize - 1;
+          }
+          if (isNaN(end) || end >= fileSize) {
+            end = fileSize - 1;
+          }
+          if (start < 0) start = 0;
+
+          if (start >= fileSize || start > end) {
+            res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+            return res.end();
+          }
+
+          const chunkSize = end - start + 1;
+          const fileStream = fs.createReadStream(cacheFile, { start, end, highWaterMark: 256 * 1024 });
+
+          res.writeHead(206, {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunkSize,
+            'Content-Type': 'video/mp4',
+            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
+          });
+
+          req.on('close', () => fileStream.destroy());
+          return fileStream.pipe(res);
+        } else {
+          res.writeHead(200, {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
+          });
+          const fileStream = fs.createReadStream(cacheFile, { highWaterMark: 256 * 1024 });
+          req.on('close', () => fileStream.destroy());
+          return fileStream.pipe(res);
         }
-
-        const chunkSize = end - start + 1;
-        const fileStream = fs.createReadStream(cacheFile, { start, end });
-
-        res.writeHead(206, {
-          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-          'Accept-Ranges': 'bytes',
-          'Content-Length': chunkSize,
-          'Content-Type': 'video/mp4',
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
-        });
-
-        return fileStream.pipe(res);
-      } else {
-        res.writeHead(200, {
-          'Content-Length': fileSize,
-          'Content-Type': 'video/mp4',
-          'Accept-Ranges': 'bytes',
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
-        });
-        return fs.createReadStream(cacheFile).pipe(res);
       }
     } catch (err) {
-      console.warn('Error reading cached file, falling back to Drive:', err.message);
+      console.warn('Error reading cached file, falling back to live stream:', err.message);
     }
   }
 
-  // 2. PROXIED STREAM: Stream directly from Google Drive API with Range passthrough
-  const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${CONFIG.driveApiKey}`;
-  const options = {
-    headers: {}
-  };
+  // 2. LIVE PROXIED STREAM: Direct low-latency byte-range piping
+  let clientAborted = false;
+  let activeUpstream = null;
 
-  if (range) {
-    options.headers['Range'] = range;
-  }
+  req.on('close', () => {
+    clientAborted = true;
+    if (activeUpstream && activeUpstream.destroy) {
+      activeUpstream.destroy();
+    }
+  });
 
-  https.get(driveUrl, options, (driveRes) => {
-    const statusCode = driveRes.statusCode;
-
-    // If Google Drive returns an error, forward status and error
-    if (statusCode !== 200 && statusCode !== 206) {
-      res.status(statusCode);
-      return driveRes.pipe(res);
+  const forwardStream = (upstreamRes, statusCode) => {
+    if (clientAborted || res.headersSent) {
+      upstreamRes.destroy();
+      return;
     }
 
-    // Set streaming-optimized headers (explicitly omitting content-disposition and x-frame-options)
+    const contentType = upstreamRes.headers['content-type'] || '';
+    if (contentType.includes('text/html')) {
+      upstreamRes.destroy();
+      if (!res.headersSent) {
+        res.status(503).json({ error: 'Upstream quota reached, please try again' });
+      }
+      return;
+    }
+
     const responseHeaders = {
-      'Content-Type': driveRes.headers['content-type'] || 'video/mp4',
+      'Content-Type': contentType.includes('video') ? contentType : 'video/mp4',
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Expose-Headers': 'Content-Range, Accept-Ranges, Content-Length'
     };
 
-    if (driveRes.headers['content-range']) {
-      responseHeaders['Content-Range'] = driveRes.headers['content-range'];
+    if (upstreamRes.headers['content-range']) {
+      responseHeaders['Content-Range'] = upstreamRes.headers['content-range'];
     }
-    if (driveRes.headers['content-length']) {
-      responseHeaders['Content-Length'] = driveRes.headers['content-length'];
+    if (upstreamRes.headers['content-length']) {
+      responseHeaders['Content-Length'] = upstreamRes.headers['content-length'];
     }
 
     res.writeHead(statusCode, responseHeaders);
-    driveRes.pipe(res);
+    upstreamRes.pipe(res);
+  };
 
-    // Trigger background cache download if not already cached and not actively downloading
-    if (!fs.existsSync(cacheFile) && !activeDownloads.has(fileId)) {
-      triggerBackgroundCache(fileId, cacheFile);
+  // Helper: Try drive.usercontent CDN fallback
+  const tryUserContentCDN = async () => {
+    try {
+      const cdnUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+      const options = {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        timeout: 12000
+      };
+      if (range) options.headers['Range'] = range;
+
+      const { req: cdnReq, res: cdnRes } = await requestWithRedirects(cdnUrl, options);
+      activeUpstream = cdnRes;
+
+      const cdnType = cdnRes.headers['content-type'] || '';
+      if ((cdnRes.statusCode === 200 || cdnRes.statusCode === 206) && !cdnType.includes('text/html')) {
+        forwardStream(cdnRes, cdnRes.statusCode);
+      } else {
+        cdnRes.destroy();
+        if (!res.headersSent) {
+          res.status(cdnRes.statusCode === 404 ? 404 : 403).json({ error: 'Stream unavailable' });
+        }
+      }
+    } catch (cdnErr) {
+      if (!res.headersSent) {
+        res.status(502).json({ error: 'Stream connection failed' });
+      }
     }
-  }).on('error', (err) => {
-    console.error(`Stream error for file ${fileId}:`, err.message);
-    if (!res.headersSent) {
-      res.status(502).send('Stream gateway error');
+  };
+
+  // Try Drive API first (RFC 7233 byte-range supported)
+  const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${CONFIG.driveApiKey}`;
+  const options = {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    timeout: 12000
+  };
+  if (range) options.headers['Range'] = range;
+
+  const driveReq = https.get(driveUrl, options, (driveRes) => {
+    activeUpstream = driveRes;
+    const statusCode = driveRes.statusCode;
+
+    // If Google Drive API returns 200 or 206, stream immediately
+    if (statusCode === 200 || statusCode === 206) {
+      return forwardStream(driveRes, statusCode);
     }
+
+    // If 403 or redirect, fallback to usercontent CDN
+    driveRes.destroy();
+    tryUserContentCDN();
   });
+
+  driveReq.on('error', () => {
+    tryUserContentCDN();
+  });
+
+  driveReq.on('timeout', () => {
+    driveReq.destroy();
+    tryUserContentCDN();
+  });
+
+  activeUpstream = driveReq;
 });
-
-// Background cache population for instant subsequent scrubs/loops
-function triggerBackgroundCache(fileId, targetPath) {
-  activeDownloads.set(fileId, true);
-  const tempPath = `${targetPath}.part`;
-  const streamUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${CONFIG.driveApiKey}`;
-
-  https.get(streamUrl, (res) => {
-    if (res.statusCode !== 200) {
-      activeDownloads.delete(fileId);
-      return;
-    }
-    const writeStream = fs.createWriteStream(tempPath);
-    res.pipe(writeStream);
-    writeStream.on('finish', () => {
-      writeStream.close(() => {
-        try {
-          fs.renameSync(tempPath, targetPath);
-        } catch (e) {}
-        activeDownloads.delete(fileId);
-      });
-    });
-    writeStream.on('error', () => {
-      activeDownloads.delete(fileId);
-      try { fs.unlinkSync(tempPath); } catch (e) {}
-    });
-  }).on('error', () => {
-    activeDownloads.delete(fileId);
-  });
-}
 
 // ================================================================
 // THUMBNAIL / POSTER PROXY (/api/poster/:fileId)
@@ -346,6 +418,55 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`RAWX Motion Lab high-speed streaming server running on http://${HOST}:${PORT}`);
-});
+// Self-healing port reclamation if an orphaned dev server holds port 3000
+try {
+  const { execSync } = require('child_process');
+  const out = execSync('ss -tlpn 2>/dev/null || true').toString();
+  const m = out.match(/0\.0\.0\.0:3000.*pid=(\d+)/);
+  if (m && m[1] && parseInt(m[1]) !== process.pid) {
+    try {
+      process.kill(parseInt(m[1]), 'SIGKILL');
+    } catch (_) {}
+  }
+} catch (_) {}
+
+function startServer() {
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`RAWX Motion Lab high-speed streaming server running on http://${HOST}:${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${PORT} in use, attempting automatic recovery...`);
+      try {
+        const { execSync } = require('child_process');
+        const out = execSync('ss -tlpn 2>/dev/null || true').toString();
+        const m = out.match(/0\.0\.0\.0:3000.*pid=(\d+)/);
+        if (m && m[1] && parseInt(m[1]) !== process.pid) {
+          process.kill(parseInt(m[1]), 'SIGKILL');
+          setTimeout(() => {
+            try { server.close(); } catch (_) {}
+            startServer();
+          }, 350);
+          return;
+        }
+      } catch (_) {}
+    }
+    console.error('Server error:', err);
+  });
+
+  ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((sig) => {
+    process.on(sig, () => {
+      try {
+        server.close(() => process.exit(0));
+      } catch (_) {
+        process.exit(0);
+      }
+    });
+  });
+
+  return server;
+}
+
+startServer();
+

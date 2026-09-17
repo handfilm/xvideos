@@ -379,7 +379,10 @@
         <option value="cyberpunk-green">CYBERPUNK GREEN</option>
         <option value="electric-blue">ELECTRIC BLUE</option>
       </select>
+      <button class="win-chip-btn stream-focus-btn active" id="stream-focus-btn" title="Toggle Exclusive 1-Stream Focus: halts all other videos on click to maximize playback speed (Key: X)">⚡ 1-STREAM: ON</button>
+      <button class="win-chip-btn scroll-autoplay-btn" id="scroll-autoplay-btn" title="Toggle Autoplay: off by default (videos play on hover preview or click)">⟳ AUTOPLAY: OFF</button>
       <button class="win-chip-btn tidy-windows-btn" id="tidy-windows-btn" title="Auto-align all open windows in a grid layout (Alt+T)">⊞ TIDY</button>
+      <button class="win-chip-btn snap-toggle-btn active" id="snap-toggle-btn" title="Toggle magnetic snapping to grid and adjacent windows (Alt+S)">🧲 SNAP: ON</button>
       <button class="win-chip-btn sync-loops-btn" title="Time-align every playing loop">&#8635; SYNC</button>
       <button class="win-chip-btn spotlight-btn" title="Dim all cards except the one you're hovering">&#9673; SPOTLIGHT</button>
       <button class="win-chip-btn global-mute-btn" id="global-mute-btn" title="Toggle audio for all open desktop video windows (M)">&#128263; UNMUTE ALL</button>
@@ -393,11 +396,89 @@
 
   <!-- ================= DESKTOP (floating windows live here) ================= -->
   <main class="os-desktop" id="desktop">
+    <!-- Magnetic alignment guide lines -->
+    <div class="snap-guide snap-guide-v" id="snap-guide-v" style="display: none;">
+      <span class="snap-guide-badge">ALIGN</span>
+    </div>
+    <div class="snap-guide snap-guide-h" id="snap-guide-h" style="display: none;">
+      <span class="snap-guide-badge">ALIGN</span>
+    </div>
     <div class="desktop-brand" aria-hidden="true">
       <span class="db-raw">RAW<span class="db-x">X</span></span>
       <span class="db-deeper">— MAIN INDEX —</span>
     </div>
   </main>
+
+  <!-- ================= ADVANCED MASTER PLAYBACK HUD ================= -->
+  <aside class="master-playback-hud" id="master-playback-hud" aria-label="Master Video Controller" style="display: none;">
+    <div class="mph-inner">
+      <div class="mph-left">
+        <div class="mph-poster-wrap">
+          <img class="mph-poster" id="mph-poster" src="" alt="Active Clip">
+          <span class="mph-live-badge">60 FPS</span>
+        </div>
+        <div class="mph-meta">
+          <div class="mph-title-row">
+            <span class="mph-title" id="mph-title">SELECT CLIP TO PLAY</span>
+            <span class="mph-pill-exclusive" id="mph-exclusive-pill" title="Exclusive Single-Video Focus: halts all other videos to guarantee maximum playback speed">⚡ 1-STREAM FOCUS</span>
+          </div>
+          <div class="mph-sub-row">
+            <span class="mph-cat" id="mph-cat">—</span>
+            <div class="mph-eq" id="mph-eq" title="Dynamic Equalizer Motion Visualizer">
+              <span class="mph-bar bar-1"></span>
+              <span class="mph-bar bar-2"></span>
+              <span class="mph-bar bar-3"></span>
+              <span class="mph-bar bar-4"></span>
+              <span class="mph-bar bar-5"></span>
+            </div>
+            <span class="mph-frame" id="mph-frame">F: 000</span>
+            <span class="mph-buf-badge" id="mph-buf-badge" title="Live video buffer health">BUF: --</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mph-center">
+        <div class="mph-transport">
+          <button class="mph-btn mph-step-btn" id="mph-step-back" title="Step back 1 second (← or ,)">⏮ 1s</button>
+          <button class="mph-btn mph-play-btn" id="mph-play-btn" title="Toggle Play / Pause (Space / K)">❚❚ PAUSE</button>
+          <button class="mph-btn mph-step-btn" id="mph-step-fwd" title="Step forward 1 second (→ or .)">⏭ 1s</button>
+          <div class="mph-time-display">
+            <span id="mph-time-cur">00:00.00</span>
+            <span class="mph-time-sep">/</span>
+            <span id="mph-time-dur">00:00.00</span>
+          </div>
+        </div>
+        <div class="mph-scrubber-wrap" id="mph-scrubber-wrap" title="Click or scrub along timeline">
+          <div class="mph-scrubber-track" id="mph-scrubber-track">
+            <div class="mph-buffer-bar" id="mph-buffer-bar"></div>
+            <div class="mph-hover-bar" id="mph-hover-bar"></div>
+            <div class="mph-played-bar" id="mph-played-bar"></div>
+            <div class="mph-scrubber-thumb" id="mph-scrubber-thumb"></div>
+            <div class="mph-scrubber-hover" id="mph-scrubber-hover">00:00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mph-right">
+        <!-- Instant Speed Chips -->
+        <div class="mph-speeds" id="mph-speeds" title="Instant Playback Rate ([ / ])">
+          <button class="mph-speed-chip" data-speed="0.5">0.5×</button>
+          <button class="mph-speed-chip active" data-speed="1">1.0×</button>
+          <button class="mph-speed-chip" data-speed="1.25">1.25×</button>
+          <button class="mph-speed-chip" data-speed="1.5">1.5×</button>
+          <button class="mph-speed-chip" data-speed="2">2.0×</button>
+        </div>
+
+        <!-- Pro Tools & Audio -->
+        <div class="mph-actions">
+          <button class="mph-icon-btn mph-vol-btn" id="mph-vol-btn" title="Mute / Unmute (M)">🔊</button>
+          <button class="mph-icon-btn mph-pip-btn" id="mph-pip-btn" title="Picture-in-Picture Mini Player (P)">🗔</button>
+          <button class="mph-icon-btn mph-expand-btn" id="mph-expand-btn" title="Theater Fullscreen Lightbox (F)">⤢</button>
+          <button class="mph-icon-btn mph-close-btn" id="mph-close-btn" title="Dock Player HUD">✕</button>
+        </div>
+      </div>
+    </div>
+  </aside>
 
   <!-- ================= TASKBAR ================= -->
   <footer class="os-taskbar">
@@ -437,12 +518,16 @@
     </select>
   </div>
   <div class="mss-row mss-row-buttons">
-    <button class="win-chip-btn tidy-windows-btn" id="mobile-tidy-windows-btn">⊞ TIDY WINDOWS</button>
-    <button class="win-chip-btn sync-loops-btn">&#8635; SYNC ALL LOOPS</button>
+    <button class="win-chip-btn stream-focus-btn active" id="mobile-stream-focus-btn">⚡ 1-STREAM: ON</button>
+    <button class="win-chip-btn scroll-autoplay-btn" id="mobile-scroll-autoplay-btn">⟳ AUTOPLAY: OFF</button>
   </div>
   <div class="mss-row mss-row-buttons">
+    <button class="win-chip-btn tidy-windows-btn" id="mobile-tidy-windows-btn">⊞ TIDY WINDOWS</button>
+    <button class="win-chip-btn snap-toggle-btn active" id="mobile-snap-toggle-btn">🧲 SNAP: ON</button>
+  </div>
+  <div class="mss-row mss-row-buttons">
+    <button class="win-chip-btn sync-loops-btn">&#8635; SYNC ALL LOOPS</button>
     <button class="win-chip-btn spotlight-btn">&#9673; SPOTLIGHT HOVER</button>
-    <button class="win-chip-btn global-mute-btn" id="mobile-global-mute-btn">&#128263; UNMUTE ALL</button>
   </div>
   <div class="mss-row mss-row-buttons">
     <button class="win-chip-btn" id="mobile-presentation-btn">&#9633; PRESENTATION MODE</button>

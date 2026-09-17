@@ -295,18 +295,23 @@
     var card = el('div', 'asset-card');
     var kindLabel = item.tagName || item.catName || '';
     if (item.isVideo) {
-      card.innerHTML = '<video src="' + item.streamSrc + '" data-fallback-src="' + item.fallbackSrc + '" poster="' + item.poster + '" muted loop playsinline preload="none" data-autoplay="1" data-base-src="' + item.streamSrc + '"></video>' +
+      card.innerHTML = '<video src="' + item.streamSrc + '" data-fallback-src="' + item.fallbackSrc + '" poster="' + item.poster + '" muted loop playsinline preload="none" data-base-src="' + item.streamSrc + '"></video>' +
         '<div class="asset-card-label"><span>' + escapeHtml(item.title) + '</span><span class="asset-card-kind">' + escapeHtml(kindLabel) + '</span></div>' +
         '<button class="asset-card-pin' + (isPinned(item) ? ' pinned' : '') + '" title="Pin">' + (isPinned(item) ? '\u2713' : '+') + '</button>';
       var v = qs('video', card);
       bindVideoFallback(v);
-      card.addEventListener('mouseenter', function () { v.play().catch(function () {}); });
+      card.addEventListener('mouseenter', function () {
+        if (v.preload !== 'auto') v.preload = 'auto';
+        v.play().catch(function () {});
+      });
       card.addEventListener('mouseleave', function () { v.pause(); });
       card.addEventListener('mousemove', function (e) {
         if (!v.duration) return;
-        var rect = card.getBoundingClientRect();
-        var pct = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
-        v.currentTime = pct * v.duration;
+        if (e.buttons === 1) {
+          var rect = card.getBoundingClientRect();
+          var pct = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+          v.currentTime = pct * v.duration;
+        }
       });
       var touching = false;
       card.addEventListener('touchstart', function () { touching = true; v.play().catch(function () {}); }, { passive: true });
@@ -346,18 +351,9 @@
     // prev/next by index, which only ever moves forward from a click.
   }
 
-  var autoplayObserver = null, memoryGuardObserver = null, revealObserver = null;
+  var memoryGuardObserver = null, revealObserver = null;
   function setupObservers() {
     if (typeof IntersectionObserver === 'undefined') { qsa('.asset-card').forEach(function (c) { c.classList.add('card-in-view'); }); return; }
-
-    if (!autoplayObserver) {
-      autoplayObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) { if (e.isIntersecting) e.target.play().catch(function () {}); else e.target.pause(); });
-      }, { rootMargin: '150px 0px', threshold: 0.15 });
-    }
-    qsa('video[data-autoplay="1"]:not([data-observed])').forEach(function (v) {
-      v.dataset.observed = '1'; autoplayObserver.observe(v);
-    });
 
     if (!memoryGuardObserver) {
       memoryGuardObserver = new IntersectionObserver(function (entries) {
