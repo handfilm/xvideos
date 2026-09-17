@@ -30,16 +30,25 @@ const CATALOG_TTL = 30 * 60 * 1000; // 30 minutes
 // Active download locks for caching
 const activeDownloads = new Map();
 
-// Helper: HTTP GET with promises
+// Helper: HTTP GET with promises and error safety
 function httpsGet(url, options = {}) {
   return new Promise((resolve, reject) => {
-    https.get(url, options, resolve).on('error', reject);
+    const client = url.startsWith('http:') ? require('http') : https;
+    const req = client.get(url, options, (res) => {
+      resolve(res);
+    });
+    req.on('error', reject);
+    req.setTimeout(options.timeout || 15000, () => {
+      req.destroy(new Error('Request timeout'));
+      reject(new Error('Request timeout'));
+    });
   });
 }
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
+    const client = url.startsWith('http:') ? require('http') : https;
+    const req = client.get(url, (res) => {
       let data = '';
       res.on('data', (d) => (data += d));
       res.on('end', () => {
@@ -49,7 +58,13 @@ function fetchJson(url) {
           reject(e);
         }
       });
-    }).on('error', reject);
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => {
+      req.destroy(new Error('Request timeout'));
+      reject(new Error('Request timeout'));
+    });
   });
 }
 
@@ -69,24 +84,53 @@ function titleFromName(name) {
 // - Disk-backed chunk caching with a single-worker queue for zero lag
 // ================================================================
 
-// Helper: HTTP request following redirects (up to maxRedirects)
+// Helper: HTTP request following redirects (up to maxRedirects) with full error safety
 function requestWithRedirects(targetUrl, options = {}, maxRedirects = 3) {
   return new Promise((resolve, reject) => {
-    const req = https.get(targetUrl, options, (res) => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-        res.destroy();
-        if (maxRedirects <= 0) {
-          return reject(new Error('Too many redirects'));
-        }
-        return resolve(requestWithRedirects(res.headers.location, options, maxRedirects - 1));
+    let settled = false;
+    const safeResolve = (val) => {
+      if (!settled) {
+        settled = true;
+        resolve(val);
       }
-      resolve({ req, res });
+    };
+    const safeReject = (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    };
+
+    const client = targetUrl.startsWith('http:') ? require('http') : https;
+    const req = client.get(targetUrl, options, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        try { res.destroy(); } catch (_) {}
+        if (maxRedirects <= 0) {
+          return safeReject(new Error('Too many redirects'));
+        }
+        let nextUrl = res.headers.location;
+        if (!nextUrl.startsWith('http')) {
+          try {
+            nextUrl = new URL(nextUrl, targetUrl).toString();
+          } catch (e) {
+            return safeReject(e);
+          }
+        }
+        return requestWithRedirects(nextUrl, options, maxRedirects - 1)
+          .then(safeResolve)
+          .catch(safeReject);
+      }
+      safeResolve({ req, res });
     });
-    req.on('error', reject);
+
+    req.on('error', (err) => {
+      safeReject(err);
+    });
+
     if (options.timeout) {
       req.setTimeout(options.timeout, () => {
-        req.destroy();
-        reject(new Error('Request timeout'));
+        try { req.destroy(); } catch (_) {}
+        safeReject(new Error('Request timeout'));
       });
     }
   });
@@ -202,6 +246,17 @@ app.get('/api/stream/:fileId', async (req, res) => {
       responseHeaders['Content-Length'] = upstreamRes.headers['content-length'];
     }
 
+    upstreamRes.on('error', (err) => {
+      console.warn('Upstream stream error:', err.message);
+      try {
+        if (!res.headersSent) {
+          res.status(502).json({ error: 'Stream interrupted' });
+        } else {
+          res.end();
+        }
+      } catch (_) {}
+    });
+
     res.writeHead(statusCode, responseHeaders);
     upstreamRes.pipe(res);
   };
@@ -225,7 +280,7 @@ app.get('/api/stream/:fileId', async (req, res) => {
       if ((cdnRes.statusCode === 200 || cdnRes.statusCode === 206) && !cdnType.includes('text/html')) {
         forwardStream(cdnRes, cdnRes.statusCode);
       } else {
-        cdnRes.destroy();
+        try { cdnRes.destroy(); } catch (_) {}
         if (!res.headersSent) {
           res.status(cdnRes.statusCode === 404 ? 404 : 403).json({ error: 'Stream unavailable' });
         }
@@ -257,16 +312,17 @@ app.get('/api/stream/:fileId', async (req, res) => {
     }
 
     // If 403 or redirect, fallback to usercontent CDN
-    driveRes.destroy();
+    try { driveRes.destroy(); } catch (_) {}
     tryUserContentCDN();
   });
 
-  driveReq.on('error', () => {
+  driveReq.on('error', (err) => {
+    console.warn('Drive stream request error:', err.message);
     tryUserContentCDN();
   });
 
   driveReq.on('timeout', () => {
-    driveReq.destroy();
+    try { driveReq.destroy(); } catch (_) {}
     tryUserContentCDN();
   });
 
@@ -275,32 +331,118 @@ app.get('/api/stream/:fileId', async (req, res) => {
 
 // ================================================================
 // THUMBNAIL / POSTER PROXY (/api/poster/:fileId)
+// Robust fetch following redirects with timeout and error guards
 // ================================================================
-app.get('/api/poster/:fileId', (req, res) => {
+function fetchPosterWithRedirects(targetUrl, maxRedirects = 4, timeoutMs = 12000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const safeResolve = (val) => {
+      if (!settled) {
+        settled = true;
+        resolve(val);
+      }
+    };
+    const safeReject = (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    };
+
+    const client = targetUrl.startsWith('http:') ? require('http') : https;
+    const req = client.get(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'image/*,*/*'
+      },
+      timeout: timeoutMs
+    }, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        try { res.resume(); } catch (_) {}
+        if (maxRedirects <= 0) {
+          return safeReject(new Error('Too many redirects'));
+        }
+        let nextUrl = res.headers.location;
+        if (!nextUrl.startsWith('http')) {
+          try {
+            nextUrl = new URL(nextUrl, targetUrl).toString();
+          } catch (e) {
+            return safeReject(e);
+          }
+        }
+        return fetchPosterWithRedirects(nextUrl, maxRedirects - 1, timeoutMs)
+          .then(safeResolve)
+          .catch(safeReject);
+      }
+      safeResolve({ req, res });
+    });
+
+    req.on('error', (err) => {
+      safeReject(err);
+    });
+
+    req.on('timeout', () => {
+      try { req.destroy(new Error('Request timeout')); } catch (_) {}
+      safeReject(new Error('Request timeout'));
+    });
+  });
+}
+
+app.get('/api/poster/:fileId', async (req, res) => {
   const fileId = req.params.fileId;
+  if (!fileId || !/^[\w-]+$/.test(fileId)) {
+    return res.status(400).end();
+  }
   const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
 
-  https.get(thumbUrl, (thumbRes) => {
-    if (thumbRes.statusCode >= 300 && thumbRes.statusCode < 400 && thumbRes.headers.location) {
-      return https.get(thumbRes.headers.location, (redirRes) => {
-        res.writeHead(redirRes.statusCode, {
-          'Content-Type': redirRes.headers['content-type'] || 'image/jpeg',
-          'Cache-Control': 'public, max-age=604800',
-          'Access-Control-Allow-Origin': '*'
-        });
-        redirRes.pipe(res);
-      });
+  let clientClosed = false;
+  let activeReq = null;
+  let activeRes = null;
+
+  req.on('close', () => {
+    clientClosed = true;
+    try {
+      if (activeReq && !activeReq.destroyed) activeReq.destroy();
+      if (activeRes && !activeRes.destroyed) activeRes.destroy();
+    } catch (_) {}
+  });
+
+  try {
+    const { req: upstreamReq, res: upstreamRes } = await fetchPosterWithRedirects(thumbUrl, 4, 12000);
+    activeReq = upstreamReq;
+    activeRes = upstreamRes;
+
+    if (clientClosed || res.headersSent) {
+      try { upstreamRes.destroy(); } catch (_) {}
+      return;
     }
 
-    res.writeHead(thumbRes.statusCode, {
-      'Content-Type': thumbRes.headers['content-type'] || 'image/jpeg',
+    if (upstreamRes.statusCode < 200 || upstreamRes.statusCode >= 400) {
+      try { upstreamRes.destroy(); } catch (_) {}
+      if (!res.headersSent) res.status(upstreamRes.statusCode || 502).end();
+      return;
+    }
+
+    res.writeHead(upstreamRes.statusCode, {
+      'Content-Type': upstreamRes.headers['content-type'] || 'image/jpeg',
       'Cache-Control': 'public, max-age=604800',
       'Access-Control-Allow-Origin': '*'
     });
-    thumbRes.pipe(res);
-  }).on('error', () => {
-    res.status(502).end();
-  });
+
+    upstreamRes.on('error', (err) => {
+      console.warn('Poster stream error:', err.message);
+      try {
+        if (!res.headersSent) res.status(502).end();
+        else res.end();
+      } catch (_) {}
+    });
+
+    upstreamRes.pipe(res);
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(502).end();
+    }
+  }
 });
 
 // ================================================================
